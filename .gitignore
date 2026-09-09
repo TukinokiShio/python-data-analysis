@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+.env
+.env.*
+*.log
+*.tmp
+*.bak
+
+# Large local/generated outputs
+*.parquet
+*.pkl
+*.pickle
+dist/
+build/
+

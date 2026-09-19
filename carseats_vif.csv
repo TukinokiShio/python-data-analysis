@@ -1,0 +1,6 @@
+variable,VIF
+"C(ShelveLoc, Treatment(reference=""Bad""))[T.Medium]",1.4937822482123735
+"C(ShelveLoc, Treatment(reference=""Bad""))[T.Good]",1.497279197299903
+Price,1.007733242048329
+Income,1.0124217196665177
+Advertising,1.0094037254625776

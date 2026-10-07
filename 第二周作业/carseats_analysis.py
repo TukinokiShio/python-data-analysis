@@ -1,7 +1,7 @@
 r"""第二周作业：Carseats 多元线性回归与多重共线性诊断。
 
 运行：
-    .venv\Scripts\python.exe carseats_analysis.py
+    .venv\Scripts\python.exe 第二周作业\carseats_analysis.py
 
 脚本优先读取同目录下的 Carseats.csv；若文件不存在，则从公开数据地址读取。
 """

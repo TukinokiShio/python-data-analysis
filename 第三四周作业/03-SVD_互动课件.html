@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVD 互动课件 · 奇异值分解：从旋转缩放到大数据魔法</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#111a33; --card:#162040cc; --line:#26335e;
+    --txt:#e8ecff; --sub:#9fb0e0; --vio:#8b7bff; --cy:#4de3d1; --pk:#ff7ad9; --yl:#ffd166; --ok:#7bf1a8; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1200px 800px at 80% -10%,#1b2a5e 0%,transparent 60%),
+       radial-gradient(900px 600px at -10% 30%,#3a1c5e 0%,transparent 55%),var(--bg);
+       color:var(--txt);font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;line-height:1.75;}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px 120px}
+  /* ---------- 顶部 ---------- */
+  header{position:sticky;top:0;z-index:50;background:#0b1020ee;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .hbar{max-width:1060px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+  .logo{font-weight:800;font-size:18px;background:linear-gradient(90deg,var(--vio),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+  nav{display:flex;gap:4px;overflow-x:auto;flex:1;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav a{color:var(--sub);text-decoration:none;font-size:13px;padding:6px 10px;border-radius:8px;white-space:nowrap;transition:.2s}
+  nav a:hover,nav a.on{color:#fff;background:#ffffff14}
+  #prog{height:3px;background:linear-gradient(90deg,var(--vio),var(--cy));width:0;transition:width .15s}
+  /* ---------- 章节 ---------- */
+  section{margin-top:64px;scroll-margin-top:80px}
+  .kicker{color:var(--cy);font-size:13px;letter-spacing:3px;font-weight:700;text-transform:uppercase}
+  h1{font-size:clamp(30px,5vw,52px);line-height:1.25;margin:10px 0 14px;font-weight:900}
+  h1 .grad{background:linear-gradient(90deg,var(--vio),var(--pk),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
+  h2{font-size:26px;margin:8px 0 14px;font-weight:800}
+  h3{font-size:18px;margin:18px 0 8px;color:var(--yl)}
+  p.sub{color:var(--sub);font-size:16px;max-width:760px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-top:20px;box-shadow:0 10px 30px #0006}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .tag{display:inline-block;background:#8b7bff22;border:1px solid #8b7bff55;color:#c9c0ff;font-size:12px;padding:2px 10px;border-radius:999px;margin:2px 4px 2px 0}
+  .tag.c{background:#4de3d11c;border-color:#4de3d155;color:#a9f5ec}
+  .tag.p{background:#ff7ad91c;border-color:#ff7ad955;color:#ffc2ee}
+  .tag.y{background:#ffd1661c;border-color:#ffd16655;color:#ffe7ad}
+  .formula{font-family:Georgia,"Times New Roman",serif;font-style:italic;background:#0a0f22;border:1px dashed #3a4a85;border-radius:12px;padding:16px 20px;margin:14px 0;text-align:center;font-size:19px;color:#dfe6ff;overflow-x:auto}
+  .formula b{color:var(--cy);font-style:normal}
+  .mono{font-family:ui-monospace,Consolas,monospace;font-size:13px;background:#0a0f22;border-radius:8px;padding:2px 7px;color:var(--cy)}
+  ul.pts{margin:8px 0 8px 22px;color:var(--sub)}
+  ul.pts li{margin:6px 0}
+  ul.pts b{color:var(--txt)}
+  /* ---------- 案例条 ---------- */
+  .case{border-left:4px solid var(--pk);background:linear-gradient(90deg,#ff7ad914,transparent 70%);border-radius:0 14px 14px 0;padding:16px 20px;margin-top:18px}
+  .case h4{color:var(--pk);font-size:15px;margin-bottom:6px}
+  .case p{color:var(--sub);font-size:14.5px}
+  /* ---------- 控件 ---------- */
+  .ctl{display:flex;align-items:center;gap:12px;margin:12px 0;flex-wrap:wrap}
+  .ctl label{font-size:13.5px;color:var(--sub);min-width:120px}
+  input[type=range]{flex:1;min-width:160px;accent-color:var(--vio);height:4px}
+  .val{font-family:ui-monospace,monospace;color:var(--cy);min-width:56px;text-align:right}
+  button,select{cursor:pointer;border:1px solid var(--line);background:#1b2650;color:var(--txt);border-radius:10px;padding:8px 16px;font-size:14px;transition:.15s}
+  button:hover{background:#26346b;border-color:#3a4a85}
+  button.acc{background:linear-gradient(90deg,var(--vio),#5a8bff);border:none;font-weight:700}
+  button.acc:hover{filter:brightness(1.15)}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  canvas{display:block;background:#0a0f22;border:1px solid var(--line);border-radius:12px;max-width:100%}
+  .stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px}
+  .stat{background:#0a0f22;border:1px solid var(--line);border-radius:12px;padding:10px 16px;min-width:130px}
+  .stat .n{font-size:22px;font-weight:800;color:var(--cy)}
+  .stat .l{font-size:12px;color:var(--sub)}
+  /* ---------- 热力图 ---------- */
+  .heat{display:grid;gap:5px;margin-top:12px}
+  .cell{border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0b1020;min-height:38px;position:relative}
+  .cell.miss{background:#1a2450 !important;color:#5f6ea8;font-weight:400;font-size:11px}
+  .hlabel{font-size:12px;color:var(--sub);display:flex;align-items:center;justify-content:center;min-height:38px;text-align:center;padding:0 4px}
+  /* ---------- 推导步骤 ---------- */
+  .step{border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
+  .step .head{background:#131c3d;padding:12px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+  .step .head:hover{background:#1a2450}
+  .step .body{display:none;padding:14px 18px;background:#0d1430}
+  .step.open .body{display:block}
+  .step .arr{transition:.2s;color:var(--cy)}
+  .step.open .arr{transform:rotate(90deg)}
+  /* ---------- 测验 ---------- */
+  .quizq{margin:14px 0}
+  .opt{display:block;width:100%;text-align:left;margin:8px 0;background:#0a0f22}
+  .opt.right{border-color:var(--ok);background:#7bf1a818;color:var(--ok)}
+  .opt.wrong{border-color:var(--bad);background:#ff6b6b18;color:var(--bad)}
+  .fb{font-size:14px;margin-top:6px;min-height:22px}
+  /* ---------- 页脚时间轴 ---------- */
+  .tl{display:flex;gap:0;overflow-x:auto;margin-top:24px}
+  .tl div{flex:1;min-width:130px;border-top:3px solid var(--vio);padding:10px 12px;font-size:12.5px;color:var(--sub)}
+  .tl b{display:block;color:var(--txt);font-size:13.5px}
+  .fade{opacity:0;transform:translateY(24px);transition:opacity .6s,transform .6s}
+  .fade.in{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="logo">SVD · 互动课件</div>
+    <nav id="nav">
+      <a href="#s0">封面</a><a href="#s1">为什么</a><a href="#s2">几何魔法</a><a href="#s3">核心定理</a>
+      <a href="#s4">推导</a><a href="#s4b">手算实战</a><a href="#s5">Eckart-Young</a><a href="#s6">压缩照片</a><a href="#s7">电影推荐</a>
+      <a href="#s8">PCA & Ridge</a><a href="#s9">测验</a>
+    </nav>
+  </div>
+  <div id="prog"></div>
+</header>
+
+<div class="wrap">
+
+<!-- ================= 0 封面 ================= -->
+<section id="s0" class="fade">
+  <div class="kicker">数据分析与统计学习 · 90 分钟教案 · 互动版</div>
+  <h1>奇异值分解<br><span class="grad">把任何矩阵拆成「旋转 → 拉伸 → 旋转」</span></h1>
+  <p class="sub">一张 500 万像素的照片，只需 20 个数字模式就能还原出九成细节；Netflix 愿意为一百万美元，只为更好的推荐算法——它们背后都是同一个数学工具：<b style="color:var(--cy)">SVD</b>。</p>
+  <div class="card" style="margin-top:26px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <button class="acc" onclick="document.getElementById('s1').scrollIntoView({behavior:'smooth'})">▶ 开始探索</button>
+      <span class="tag">A = UΣVᵀ</span><span class="tag c">PCA / PCR</span><span class="tag p">推荐系统</span><span class="tag y">图像压缩</span><span class="tag">Ridge 回归</span>
+    </div>
+  </div>
+  <div class="tl">
+    <div><b>① 15 min</b>问题引入与几何直观</div>
+    <div><b>② 35 min</b>SVD 定理与代数推导</div>
+    <div><b>③ 20 min</b>Eckart-Young 与应用</div>
+    <div><b>④ 20 min</b>Python 实战（本课件用 JS 复刻）</div>
+  </div>
+</section>
+
+<!-- ================= 1 为什么 ================= -->
+<section id="s1" class="fade">
+  <div class="kicker">Part 1 · 动机</div>
+  <h2>为什么普通特征分解不够用？</h2>
+  <p class="sub">对称方阵可以特征分解 <span class="mono">B = VΛVᵀ</span>，但数据矩阵 <span class="mono">X<sub>n×p</sub></span>（n 个样本 × p 个特征）通常是<b>长方形</b>的，而且根本不对称——特征分解直接"罢工"。</p>
+  <div class="case">
+    <h4>🎬 案例 · Netflix Prize（2006–2009）</h4>
+    <p>Netflix 放出 1 亿条用户打分（一个约 480,000 用户 × 17,770 部电影的巨大稀疏矩阵），悬赏 <b style="color:var(--yl)">100 万美元</b>：谁能把预测评分误差降低 10%。获奖方案的核心思想之一正是矩阵分解——把"人"和"电影"都投影到同一个低维隐空间。这也是本课件第 7 节你将亲手玩到的玩具版。</p>
+  </div>
+  <div class="case" style="border-color:var(--cy);background:linear-gradient(90deg,#4de3d114,transparent 70%)">
+    <h4 style="color:var(--cy)">🖼️ 案例 · 一张照片 = 一个矩阵</h4>
+    <p>灰度照片就是一个 m×n 的数表。SVD 告诉你：这张照片其实由少数几个"基本图案模式"叠加而成，每个模式的重要性由奇异值 σⱼ 决定。丢掉小的 σⱼ，就是压缩与去噪。第 6 节你会用滑块亲手"扔掉"奇异值，看着照片从模糊变清晰。</p>
+  </div>
+  <div class="case" style="border-color:var(--yl);background:linear-gradient(90deg,#ffd16614,transparent 70%)">
+    <h4 style="color:var(--yl)">👤 案例 · Eigenfaces 人脸识别的基石</h4>
+    <p>90 年代 MIT 的经典工作：把几百张人脸照片按列堆成矩阵做 SVD，前几个"主成分"看起来就像模糊的平均脸、明暗方向、五官轮廓——机器正是靠这几十个数来认人的。</p>
+    <div class="step" style="margin-top:12px">
+      <div class="head" onclick="this.parentNode.classList.toggle('open')">📐 点开看 Eigenfaces 的 5 步计算流水线 <span class="arr">▶</span></div>
+      <div class="body">
+        <p style="color:var(--sub)"><b>① 堆矩阵</b>：收集 400 张 64×64 人脸灰度图，每张拉直成 4096 维列向量 → A 是 4096×400 的大矩阵。</p>
+        <p style="color:var(--sub)"><b>② 中心化</b>：减去"平均脸"（每列均值归 0）——这正是 PCA 的标准预处理。</p>
+        <p style="color:var(--sub)"><b>③ 做 SVD</b>：前 k 个左奇异向量 u₁…uₖ 就是"特征脸"；σⱼ 告诉你第 j 张特征脸承载了多少人脸方差。</p>
+        <p style="color:var(--sub)"><b>④ 投影压缩</b>：任意新脸 x 只需 k 个系数 cⱼ = uⱼᵀx。取 k=40 时，一张脸从 4096 个数压到 40 个数——<b style="color:var(--cy)">压缩 99%</b>。</p>
+        <p style="color:var(--sub)"><b>⑤ 识别</b>：比较新脸系数向量与库中每个人脸的系数距离（最近邻），距离最小者即为同一人。</p>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>✅ SVD 的普适性（本课最重要的一句话）</h3>
+    <div class="formula"><b>任何</b>实矩阵 A<sub>m×n</sub>，无论长宽、无论是否对称、无论是否满秩，都一定存在奇异值分解 A = UΣVᵀ</div>
+  </div>
+</section>
+
+<!-- ================= 2 几何魔法 ================= -->
+<section id="s2" class="fade">
+  <div class="kicker">Part 2 · 几何直观</div>
+  <h2>矩阵在偷偷做三件事：旋转 → 拉伸 → 再旋转</h2>
+  <p class="sub">把矩阵 A 看成一台"空间变形机"：它把左边的<b style="color:var(--vio)">单位圆</b>压成右边的<b style="color:var(--cy)">椭圆</b>。椭圆的长半轴 = σ₁，短半轴 = σ₂。vⱼ 是原空间的正交方向，uⱼ 是变形后的正交方向。<b>拖动滑块改变矩阵，观察椭圆如何变化 👇</b></p>
+
+  <div class="card">
+    <div class="btnrow">
+      <button onclick="preset('rot')">🌀 纯旋转（σ₁=σ₂）</button>
+      <button onclick="preset('stretch')">↔️ 纯拉伸</button>
+      <button onclick="preset('shear')">✂️ 剪切</button>
+      <button onclick="preset('proj')">📉 投影（σ₂=0，退化！）</button>
+    </div>
+    <div class="ctl"><label>矩阵元素 a</label><input type="range" id="ma" min="-2" max="2" step="0.1" value="1.2"><span class="val" id="mav">1.2</span></div>
+    <div class="ctl"><label>矩阵元素 b</label><input type="range" id="mb" min="-2" max="2" step="0.1" value="0.6"><span class="val" id="mbv">0.6</span></div>
+    <div class="ctl"><label>矩阵元素 c</label><input type="range" id="mc" min="-2" max="2" step="0.1" value="0.6"><span class="val" id="mcv">0.6</span></div>
+    <div class="ctl"><label>矩阵元素 d</label><input type="range" id="md" min="-2" max="2" step="0.1" value="0.8"><span class="val" id="mdv">0.8</span></div>
+    <canvas id="geo" width="1000" height="460" style="width:100%"></canvas>
+    <div class="stats" id="geostats"></div>
+  </div>
+  <div class="card">
+    <h3>三步变换对应三个矩阵</h3>
+    <ul class="pts">
+      <li><b>Vᵀ</b>：在原空间做一次刚体旋转，找出正交基 v₁, v₂（"先转到一个好看的角度"）</li>
+      <li><b>Σ</b>：沿坐标轴拉伸 σ₁ 倍、σ₂ 倍（"只在关键方向上拉开差距"）</li>
+      <li><b>U</b>：在目标空间再旋转一次，对齐 u₁, u₂（"转到最终姿态"）</li>
+    </ul>
+    <div class="formula">A v<sub>j</sub> = σ<sub>j</sub> u<sub>j</sub>&nbsp;&nbsp;——这是整节课的"发动机"</div>
+  </div>
+</section>
+
+<!-- ================= 3 核心定理 ================= -->
+<section id="s3" class="fade">
+  <div class="kicker">Part 3 · 核心定理</div>
+  <h2>SVD 的正式定义</h2>
+  <div class="card">
+    <div class="formula" style="font-size:24px">A<sub>m×n</sub> = <b>U</b><sub>m×m</sub> <b>Σ</b><sub>m×n</sub> <b>Vᵀ</b><sub>n×n</sub></div>
+    <div class="grid2">
+      <div>
+        <h3 style="color:var(--vio)">U —— 左奇异向量</h3>
+        <p style="color:var(--sub);font-size:14.5px">列 u₁…uₘ 是 ℝᵐ 的标准正交基，满足 UᵀU = I。<b>它们是变形后的方向</b>。</p>
+      </div>
+      <div>
+        <h3 style="color:var(--vio)">V —— 右奇异向量</h3>
+        <p style="color:var(--sub);font-size:14.5px">列 v₁…vₙ 是 ℝⁿ 的标准正交基，满足 VᵀV = I。<b>它们是变形前的方向</b>。</p>
+      </div>
+    </div>
+    <h3 style="color:var(--vio)">Σ —— 奇异值</h3>
+    <div class="formula">Σ = diag(σ₁, σ₂, …, σ<sub>r</sub>)，&nbsp;σ₁ ≥ σ₂ ≥ … ≥ σ<sub>r</sub> &gt; 0，&nbsp;r = rank(A)</div>
+    <p style="color:var(--sub)">Σ 的"对角线"之外全是 0；r 个正奇异值的个数恰好等于矩阵的秩——<b style="color:var(--yl)">SVD 顺手把秩也告诉你了</b>。</p>
+  </div>
+  <div class="card">
+    <h3>🧱 外积展开：把 A 拆成 r 块"积木"</h3>
+    <div class="formula">A = Σ<sub>j=1..r</sub> σ<sub>j</sub> u<sub>j</sub> v<sub>j</sub>ᵀ = σ₁u₁v₁ᵀ + σ₂u₂v₂ᵀ + … + σ<sub>r</sub>u<sub>r</sub>v<sub>r</sub>ᵀ</div>
+    <p style="color:var(--sub)">每个外积项 uⱼvⱼᵀ 是一张秩 1 的"基本图案"，σⱼ 是这块积木的<b style="color:var(--cy)">能量权重</b>。照片压缩（第 6 节）就是只保留能量最大的前 k 块积木。</p>
+  </div>
+</section>
+
+<!-- ================= 4 推导 ================= -->
+<section id="s4" class="fade">
+  <div class="kicker">Part 4 · 代数推导（点击展开每一步）</div>
+  <h2>不用背，三步推出来</h2>
+  <p class="sub">思路：A 本身不对称，但 AᵀA 和 AAᵀ 永远<b style="color:var(--cy)">对称半正定</b>——于是可以偷用对称阵的特征分解。</p>
+
+  <div class="step">
+    <div class="head" onclick="this.parentNode.classList.toggle('open')">第 1 步：算 AᵀA，解出 V 和 σ <span class="arr">▶</span></div>
+    <div class="body">
+      <div class="formula">AᵀA = (UΣVᵀ)ᵀ(UΣVᵀ) = V(ΣᵀΣ)Vᵀ</div>
+      <p style="color:var(--sub)">两边右乘 V：(AᵀA)vⱼ = σⱼ² vⱼ。所以 <b>vⱼ 是 AᵀA 的标准正交特征向量</b>，而奇异值与特征值的关系是：</p>
+      <div class="formula">σ<sub>j</sub> = √λ<sub>j</sub>(AᵀA)</div>
+    </div>
+  </div>
+  <div class="step">
+    <div class="head" onclick="this.parentNode.classList.toggle('open')">第 2 步：算 AAᵀ，解出 U <span class="arr">▶</span></div>
+    <div class="body">
+      <div class="formula">AAᵀ = U(ΣΣᵀ)Uᵀ ⟹ (AAᵀ)u<sub>j</sub> = σ<sub>j</sub>² u<sub>j</sub></div>
+      <p style="color:var(--sub)">同理：<b>uⱼ 是 AAᵀ 的标准正交特征向量</b>，非零特征值与 AᵀA 完全相同（都是 σⱼ²）。</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="head" onclick="this.parentNode.classList.toggle('open')">第 3 步：对齐 u 和 v 的符号 <span class="arr">▶</span></div>
+    <div class="body">
+      <div class="formula">u<sub>j</sub> = (1/σ<sub>j</sub>) · A v<sub>j</sub></div>
+      <p style="color:var(--sub)">⚠️ 单独对 AAᵀ 做特征分解时，特征向量符号有 ±1 的自由度。用上面的公式统一从 vⱼ 推出 uⱼ，才能保证 Avⱼ = σⱼuⱼ 成立——这也是 NumPy 的 <span class="mono">np.linalg.svd</span> 内部做的事。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>✍️ 试试手（课后作业第 1 题原型）</h3>
+    <p style="color:var(--sub)">对 A = [[3,0],[0,−2],[0,0]]：AᵀA = [[9,0],[0,4]] → σ₁=3, σ₂=2；v₁=(1,0), v₂=(0,1)；再用 uⱼ = Avⱼ/σⱼ 得 u₁=(1,0,0), u₂=(0,−1,0)。三个矩阵各就各位：</p>
+    <div class="formula">A = [u₁ u₂ u₃] · diag(3, 2) · [v₁ v₂]ᵀ</div>
+    <button onclick="this.nextElementSibling.style.display='block';this.disabled=true">对答案：展开 σ₁u₁v₁ᵀ + σ₂u₂v₂ᵀ = ？</button>
+    <p style="display:none;color:var(--ok);margin-top:10px">3·(1,0,0)ᵀ(1,0) + 2·(0,−1,0)ᵀ(0,1) = [[3,0],[0,−2],[0,0]] ✓ 完全复原！</p>
+  </div>
+</section>
+
+<!-- ================= 4b 手算实战 ================= -->
+<section id="s4b" class="fade">
+  <div class="kicker">Part 4+ · 手算实战</div>
+  <h2>完整走一遍：求奇异值 σ、右奇异基 V、左奇异基 U</h2>
+  <p class="sub">用一个 3×2 矩阵演示全部流程。特别留意：<b style="color:var(--yl)">U 必须是 3×3 正交阵，但非零奇异值只有 2 个 —— 第三个正交基向量要从零空间里"补"出来</b>（这正是"求正交基"最容易丢分的一步）。点"下一步"逐步推演 👇</p>
+  <div class="card">
+    <div class="formula" style="font-size:22px">A = [[1, 1], [2, 2], [2, −2]]&nbsp;&nbsp;&nbsp;(3×2，rank = 2)</div>
+    <div id="stepBox" style="min-height:300px"></div>
+    <div class="btnrow" style="justify-content:center;margin-top:16px">
+      <button onclick="stepMove(-1)">◀ 上一步</button>
+      <span id="stepDots" style="align-self:center;color:var(--sub);font-size:13px"></span>
+      <button class="acc" onclick="stepMove(1)">下一步 ▶</button>
+      <button onclick="verifySVD()">⚡ 用 Jacobi 算法数值验证</button>
+    </div>
+    <div id="verifyOut" style="margin-top:14px;font-size:14px"></div>
+  </div>
+</section>
+
+<!-- ================= 5 Eckart-Young ================= -->
+<section id="s5" class="fade">
+  <div class="kicker">Part 5 · 最优低秩逼近</div>
+  <h2>Eckart–Young–Mirsky 定理：截断 SVD 就是最优解</h2>
+  <div class="card">
+    <div class="formula">A<sub>k</sub> = Σ<sub>j=1..k</sub> σ<sub>j</sub>u<sub>j</sub>v<sub>j</sub>ᵀ = argmin<sub>rank(B)≤k</sub> ‖A − B‖<sub>F</sub></div>
+    <div class="formula">最小误差 ‖A − A<sub>k</sub>‖<sub>F</sub> = √(σ<sub>k+1</sub>² + σ<sub>k+2</sub>² + … + σ<sub>r</sub>²)</div>
+    <p style="color:var(--sub)">直觉：<b style="color:var(--cy)">先扔最不值钱的模式，误差最小</b>。这就是图像压缩、降噪、推荐系统的理论底气。接下来两个互动实验，都是这条定理的直接演示。</p>
+  </div>
+</section>
+
+<!-- ================= 6 图像压缩 ================= -->
+<section id="s6" class="fade">
+  <div class="kicker">Part 6 · 互动实验 ①</div>
+  <h2>🖼️ 用 SVD 压缩一张"照片"</h2>
+  <p class="sub">下面这张照片（128×128 = 16,384 个像素）在浏览器里实时做了完整 SVD（对 AᵀA 用 Jacobi 特征分解）。<b>拖动 k，只保留前 k 个最大的奇异值模式，看看照片如何"愈合"，以及你省下了多少存储 👇</b></p>
+  <div class="card">
+    <div class="ctl">
+      <button class="acc" id="photoBtn">📸 拍摄并处理照片</button>
+      <label>保留的秩 k</label>
+      <input type="range" id="kslide" min="1" max="128" step="1" value="1" disabled><span class="val" id="kval">1</span>
+    </div>
+    <div class="grid2">
+      <div><h3 style="color:var(--sub);font-size:14px">原始照片</h3><canvas id="origC" width="256" height="256"></canvas></div>
+      <div><h3 style="color:var(--sub);font-size:14px">SVD 重构 A<sub>k</sub></h3><canvas id="recC" width="256" height="256"></canvas></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="stK">–</div><div class="l">保留模式数 k</div></div>
+      <div class="stat"><div class="n" id="stPve">–</div><div class="l">保留能量（PVE）</div></div>
+      <div class="stat"><div class="n" id="stErr">–</div><div class="l">Frobenius 误差</div></div>
+      <div class="stat"><div class="n" id="stRatio">–</div><div class="l">压缩比（存储）</div></div>
+    </div>
+    <div class="step">
+      <div class="head" onclick="this.parentNode.classList.toggle('open')">📐 计算过程揭秘：从 16,384 个像素到 10 个模式 <span class="arr">▶</span></div>
+      <div class="body">
+        <p style="color:var(--sub)"><b>① 像素 → 矩阵</b>：照片变成 128×128 的灰度矩阵 A，共 16,384 个数。</p>
+        <p style="color:var(--sub)"><b>② 造对称阵</b>：计算 AᵀA（128×128 对称阵），用 <b>Jacobi 旋转法</b>做特征分解——反复扫描、每次把最大的非对角元"旋"成 0，最多 60 轮收敛。</p>
+        <p style="color:var(--sub)"><b>③ 得到奇异值</b>（本照片的真实计算结果）：σ₁=13640，σ₂=1932，σ₃=1356，σ₄=1002，σ₅=869，σ₆=643，σ₇=557，σ₈=403，σ₉=388，σ₁₀=366 … 注意衰减有多快！</p>
+        <p style="color:var(--sub)"><b>④ 能量账</b>：k=1 → <b style="color:var(--cy)">95.2%</b>（一个"天空渐变"模式就拿走几乎全部能量）；k=5 → 99.0%；k=10 → 99.6%。</p>
+        <p style="color:var(--sub)"><b>⑤ 存储账</b>：原图存 16,384 个数；k=10 只需存 10×(128+128+1)=<b style="color:var(--yl)">2,570 个数（15.7%）</b>；k=40 也只有 62.7%，能量却达 99.9%——这就是为什么真实照片可以压得那么狠。</p>
+      </div>
+    </div>
+    <p style="color:var(--sub);font-size:13.5px;margin-top:12px">💡 注意能量曲线：往往前 5–10 个模式就承载了 95% 的信息——<b>真实照片的低秩性</b>正是压缩可行的原因。把 k 调到最大，误差应趋近 0（Eckart–Young 的验证）。</p>
+  </div>
+</section>
+
+<!-- ================= 7 推荐系统 ================= -->
+<section id="s7" class="fade">
+  <div class="kicker">Part 7 · 互动实验 ②</div>
+  <h2>🍿 迷你 Netflix：给同学推荐电影</h2>
+  <p class="sub">5 位同学给 6 部电影打分（0 = 还没看）。评分矩阵里藏着" latent 模式"：有人爱看科幻、有人爱催泪爱情片……<b>SVD 负责挖出这些模式，再补全空格。选一位同学、调 k，看推荐如何变化 👇</b></p>
+  <div class="card">
+    <div class="ctl">
+      <label>为谁推荐</label>
+      <select id="userSel"></select>
+      <label>隐空间维度 k</label>
+      <input type="range" id="rkslide" min="1" max="4" step="1" value="2"><span class="val" id="rkval">2</span>
+    </div>
+    <div class="grid2">
+      <div><h3 style="color:var(--sub);font-size:14px">原始评分</h3><div class="heat" id="heatOrig"></div></div>
+      <div><h3 style="color:var(--sub);font-size:14px">SVD 补全（rank-k）</h3><div class="heat" id="heatRec"></div></div>
+    </div>
+    <div class="card" style="background:#0a0f22;margin-top:18px">
+      <h3 style="color:var(--yl);margin-top:0">🎯 TA 的 Top-3 推荐</h3>
+      <div id="recoOut" style="font-size:15px;color:var(--sub)"></div>
+    </div>
+    <div class="step">
+      <div class="head" onclick="this.parentNode.classList.toggle('open')">📐 计算过程揭秘：这些推荐到底是怎么算出来的？ <span class="arr">▶</span></div>
+      <div class="body">
+        <p style="color:var(--sub)"><b>① 造对称阵 AᵀA</b>（6×6，元素 = 两部电影被共同打分的相关程度）：</p>
+        <div class="formula" style="font-size:15px;font-style:normal">AᵀA = [[50, 29, 0, 32, 15, 41], [29, 50, 20, 12, 37, 20], [0, 20, 41, 20, 35, 0],<br>[32, 12, 20, 57, 12, 20], [15, 37, 35, 12, 43, 15], [41, 20, 0, 20, 15, 41]]</div>
+        <p style="color:var(--sub)"><b>② Jacobi 特征分解</b>：λ = 152.36, 70.47, 45.30, 13.50, 0.36, 0 → σ = <b style="color:var(--cy)">12.34, 8.39</b>, 6.73, 3.67, 0.60, 0（rank = 5）</p>
+        <p style="color:var(--sub)"><b>③ 能量检查</b>：k=1 解释 54.0% 的评分方差，k=2 解释 79.0% → 用 k=2 做推荐已足够。</p>
+        <p style="color:var(--sub)"><b>④ 两个隐空间正交基</b>（保留两位小数）：<br>
+        电影侧 v₁ = (−0.47, −0.46, −0.28, −0.41, −0.41, −0.39) —— 全为同号，是"总体爱看电影"主模式；v₂ = (−0.46, 0.23, 0.56, −0.22, 0.47, −0.39) —— 有正有负，是"类型偏好"模式。<br>
+        用户侧 u₁ = (−0.60, −0.35, −0.44, −0.44, −0.36)，u₂ = (−0.23, 0.40, −0.54, 0.68, −0.19)。</p>
+        <p style="color:var(--sub)"><b>⑤ 手算一个预测</b>：小明 ×《泰坦尼克号》（他还没看）<br>
+        pred = σ₁·u₁[小明]·v₁[泰坦] + σ₂·u₂[小明]·v₂[泰坦] = 12.34×(−0.60)×(−0.28) + 8.39×(−0.23)×(0.56) ≈ 2.10 − 1.09 ≈ <b style="color:var(--bad)">1.0 分</b> → 不推荐。<br>
+        而 小明 ×《蜘蛛侠》 ≈ 3.01 + 0.42 ≈ <b style="color:var(--ok)">3.43 分</b> → 推荐榜首！（可对照右侧热力图验证）</p>
+      </div>
+    </div>
+    <p style="color:var(--sub);font-size:13.5px;margin-top:12px">💡 k 太小 → 模式太粗，推荐趋同（欠拟合）；k 太大 → 连噪声都学了进去（过拟合）。真实推荐系统还要加正则化——这正是第 8 节 Ridge 的用武之地。</p>
+  </div>
+</section>
+
+<!-- ================= 8 PCA & Ridge ================= -->
+<section id="s8" class="fade">
+  <div class="kicker">Part 8 · 与统计学习的交汇</div>
+  <h2>SVD ↔ PCA ↔ Ridge：一张图看懂</h2>
+  <div class="card">
+    <h3>📐 SVD 就是 PCA 的计算引擎</h3>
+    <p style="color:var(--sub)">对中心化数据 X 做 SVD：X = UΣVᵀ，则 XᵀX = VΣ²Vᵀ。<b>右奇异向量 V 就是主成分载荷，UΣ 就是主成分得分</b>，第 k 个主成分的方差解释率：</p>
+    <div class="formula">PVE<sub>k</sub> = Σ<sub>j≤k</sub>σ<sub>j</sub>² ⁄ Σ<sub>j≤r</sub>σ<sub>j</sub>²</div>
+    <p style="color:var(--sub);font-size:14px">（第 6 节照片实验里那张能量百分比表，就是 PVE——PCA 与 SVD 是同一枚硬币的两面。）</p>
+  </div>
+  <div class="card">
+    <h3>🎚️ 互动：Ridge 回归如何"聪明地"收缩</h3>
+    <p style="color:var(--sub)">把 X = UΣVᵀ 代入岭回归解，拟合值变成：</p>
+    <div class="formula">Ŷ<sub>ridge</sub> = Σ<sub>j</sub> <b>σ<sub>j</sub>² ⁄ (σ<sub>j</sub>² + λ)</b> · u<sub>j</sub>u<sub>j</sub>ᵀY</div>
+    <p style="color:var(--sub)">收缩因子 σⱼ²/(σⱼ²+λ) 永远落在 0 到 1 之间：<b style="color:var(--cy)">小的奇异值（噪声、共线性方向）被狠压，大的奇异值（信号主结构）几乎原样保留</b>。拖动 λ 看收缩曲线 👇</p>
+    <div class="ctl"><label>正则强度 λ</label><input type="range" id="lam" min="0" max="100" step="1" value="10"><span class="val" id="lamv">10</span></div>
+    <canvas id="ridge" width="1000" height="380" style="width:100%"></canvas>
+    <p style="color:var(--sub);font-size:13.5px;margin-top:8px">横轴：奇异值序号（按 σ 从大到小）；纵轴：该方向保留的比例。λ 越大，整条曲线被压得越低、越平——从"保留主成分"滑向"全部压成均值"。</p>
+  </div>
+</section>
+
+<!-- ================= 9 测验 ================= -->
+<section id="s9" class="fade">
+  <div class="kicker">Part 9 · 随堂检验</div>
+  <h2>3 道题，检验你是否真正掌握</h2>
+  <div class="card" id="quizBox"></div>
+  <div class="card" style="text-align:center;background:linear-gradient(120deg,#1c1440,#0e2438)">
+    <h2 style="margin:0 0 8px">🎉 你已完成 SVD 互动课件</h2>
+    <p style="color:var(--sub)">下一步：打开 Python，用 <span class="mono">np.linalg.svd</span> 复现第 6、7 节的实验，并完成教案中的推导题与证明题。</p>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* ================= 通用：滚动渐显 & 进度 & 导航 ================= */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in')}),{threshold:.08});
+document.querySelectorAll('.fade').forEach(el=>io.observe(el));
+const secs=[...document.querySelectorAll('section')],navAs=[...document.querySelectorAll('#nav a')];
+addEventListener('scroll',()=>{
+  const p=scrollY/(document.body.scrollHeight-innerHeight);document.getElementById('prog').style.width=(p*100)+'%';
+  let cur=0;secs.forEach((s,i)=>{if(s.getBoundingClientRect().top<120)cur=i});
+  navAs.forEach((a,i)=>a.classList.toggle('on',i===cur));
+},{passive:true});
+
+/* ================= 第2节：几何变换 ================= */
+const geo=document.getElementById('geo'),gx=geo.getContext('2d');
+const S={a:1.2,b:0.6,c:0.6,d:0.8};
+['ma','mb','mc','md'].forEach(id=>document.getElementById(id).addEventListener('input',e=>{
+  const k=id[1];S[k]=+e.target.value;document.getElementById(id+'v').textContent=S[k].toFixed(1);drawGeo();}));
+function preset(t){
+  const m={rot:[0.8,-0.6,0.6,0.8],stretch:[1.8,0,0,0.5],shear:[1,1,0,1],proj:[1,0,0,0]};
+  ['a','b','c','d'].forEach((k,i)=>{S[k]=m[t][i];const el=document.getElementById('m'+k);el.value=S[k];document.getElementById('m'+k+'v').textContent=S[k].toFixed(1);});
+  drawGeo();
+}
+function svd2(a,b,c,d){
+  const p=a*a+c*c,q=a*b+c*d,r=b*b+d*d,tr=p+r,det=p*r-q*q;
+  const disc=Math.sqrt(Math.max(tr*tr/4-det,0)),l1=tr/2+disc,l2=Math.max(tr/2-disc,0);
+  const s1=Math.sqrt(Math.max(l1,0)),s2=Math.sqrt(l2);
+  let v1=Math.abs(q)>1e-9?[q,l1-p]:(l1>=p?[1,0]:[0,1]);
+  const n1=Math.hypot(v1[0],v1[1])||1;v1=[v1[0]/n1,v1[1]/n1];
+  const v2=[-v1[1],v1[0]];
+  let u1=s1>1e-9?[(a*v1[0]+b*v1[1])/s1,(c*v1[0]+d*v1[1])/s1]:[1,0];
+  let u2=s2>1e-9?[(a*v2[0]+b*v2[1])/s2,(c*v2[0]+d*v2[1])/s2]:[0,1];
+  if(u1[0]*u2[1]-u1[1]*u2[0]<0)u2=[-u2[0],-u2[1]];
+  return{s1,s2,u1,u2,v1,v2};
+}
+let tAnim=0;
+function drawGeo(){
+  const{a,b,c,d}=S,{s1,s2,u1,u2,v1,v2}=svd2(a,b,c,d);
+  gx.clearRect(0,0,1000,460);
+  const cx1=250,cy1=230,cx2=750,cy2=230,sc=85;
+  // 网格
+  gx.strokeStyle='#1c2950';gx.lineWidth=1;
+  for(let g=-2;g<=2;g++){
+    gx.beginPath();gx.moveTo(cx1+g*sc,cy1-2.3*sc);gx.lineTo(cx1+g*sc,cy1+2.3*sc);gx.stroke();
+    gx.beginPath();gx.moveTo(cx1-2.3*sc,cy1+g*sc);gx.lineTo(cx1+2.3*sc,cy1+g*sc);gx.stroke();
+    gx.beginPath();gx.moveTo(cx2+g*sc,cy2-2.3*sc);gx.lineTo(cx2+g*sc,cy2+2.3*sc);gx.stroke();
+    gx.beginPath();gx.moveTo(cx2-2.3*sc,cy2+g*sc);gx.lineTo(cx2+2.3*sc,cy2+g*sc);gx.stroke();
+  }
+  gx.font='600 15px sans-serif';
+  gx.fillStyle='#8b7bff';gx.fillText('原空间 ℝⁿ · 单位圆',cx1-70,42);
+  gx.fillStyle='#4de3d1';gx.fillText('目标空间 ℝᵐ · 椭圆',cx2-70,42);
+  // 动画点：单位圆上 N 个点 → 映射
+  const N=64;
+  for(let i=0;i<N;i++){
+    const th=2*Math.PI*i/N+tAnim*0.3;
+    const x=Math.cos(th),y=Math.sin(th);
+    // 输入点
+    gx.fillStyle='#6f7fd0';gx.beginPath();gx.arc(cx1+x*sc,cy1+y*sc,3,0,7);gx.fill();
+    // 映射点
+    const mx=a*x+b*y,my=c*x+d*y;
+    gx.fillStyle='#4de3d1';gx.beginPath();gx.arc(cx2+mx*sc,cy2+my*sc,3.4,0,7);gx.fill();
+    // 连线动画感（每隔一个点画轨迹线）
+    if(i%2===0){gx.strokeStyle='#4de3d122';gx.beginPath();gx.moveTo(cx1+x*sc,cy1+y*sc);gx.lineTo(cx2+mx*sc,cy2+my*sc);gx.stroke();}
+  }
+  const arrow=(cx,cy,ux,uy,col,lab)=>{
+    const L=Math.hypot(ux,uy)||1,ax=ux/L,ay=uy/L,len=Math.min(L,2.4)*sc*0.85;
+    gx.strokeStyle=col;gx.fillStyle=col;gx.lineWidth=3;
+    gx.beginPath();gx.moveTo(cx,cy);gx.lineTo(cx+ax*len,cy-ay*len);gx.stroke();
+    gx.beginPath();gx.moveTo(cx+ax*len,cy-ay*len);
+    gx.lineTo(cx+ax*len-10*ax+5*ay,cy-ay*len+10*ay+5*ax);
+    gx.lineTo(cx+ax*len-10*ax-5*ay,cy-ay*len+10*ay-5*ax);gx.fill();
+    gx.font='700 14px sans-serif';gx.fillText(lab,cx+ax*len+8,cy-ay*len+4);
+  };
+  arrow(cx1,cy1,v1[0],v1[1],'#ffd166','v₁');arrow(cx1,cy1,v2[0],v2[1],'#ff7ad9','v₂');
+  arrow(cx2,cy2,u1[0]*s1,u1[1]*s1,'#ffd166','σ₁u₁');arrow(cx2,cy2,u2[0]*s2,u2[1]*s2,'#ff7ad9','σ₂u₂');
+  // 中心箭头
+  gx.strokeStyle='#8b7bff';gx.lineWidth=4;gx.beginPath();gx.moveTo(470,230);gx.lineTo(530,230);gx.stroke();
+  gx.fillStyle='#8b7bff';gx.beginPath();gx.moveTo(530,230);gx.lineTo(518,222);gx.lineTo(518,238);gx.fill();
+  gx.font='700 20px Georgia';gx.fillStyle='#e8ecff';gx.fillText('A',496,210);
+  // 统计
+  const el=document.getElementById('geostats');
+  el.innerHTML=`<div class="stat"><div class="n">${a.toFixed(1)} ${b.toFixed(1)}<br>${c.toFixed(1)} ${d.toFixed(1)}</div><div class="l">矩阵 A</div></div>
+    <div class="stat"><div class="n">σ₁ = ${s1.toFixed(2)}</div><div class="l">长半轴（主方向能量）</div></div>
+    <div class="stat"><div class="n">σ₂ = ${s2.toFixed(2)}</div><div class="l">短半轴</div></div>
+    <div class="stat"><div class="n">${s2<1e-6?'秩 1（退化!）':'秩 2'}</div><div class="l">线性无关方向数</div></div>`;
+}
+setInterval(()=>{tAnim+=0.05;drawGeo();},80);
+
+/* ================= 第6节：照片压缩（Jacobi 特征分解） ================= */
+const N=128;
+function makePhoto(){ // 合成一张"风景照"
+  const A=new Float64Array(N*N);
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const x=j/N,y=i/N;let v;
+    v=150-90*y;                                   // 天空渐变
+    const ds=Math.hypot(x-0.72,y-0.24);           // 太阳
+    if(ds<0.11)v=245;
+    const hill=0.62+0.08*Math.sin(x*9+1.5)+0.05*Math.sin(x*23); // 远山
+    if(y>hill)v=Math.max(v*0.4,40+30*Math.sin(x*50));
+    const hill2=0.75+0.06*Math.sin(x*5);          // 近山
+    if(y>hill2)v=25+18*Math.sin(x*80)*Math.sin(y*60);
+    const dhouse=Math.hypot(x-0.22,y-0.86);       // 小房子
+    if(dhouse<0.07)v=(Math.abs(x-0.22)<0.012||Math.abs(y-0.86)<0.012)?200:v;
+    const nz=Math.sin(i*12.9898+j*78.233)*43758.5453;v+=(nz-Math.floor(nz))*16-8; // 确定性伪随机噪声
+    A[i*N+j]=Math.min(255,Math.max(0,v));
+  }
+  return A;
+}
+function jacobi(A,n){ // 对称阵特征分解，返回 {d:特征值, V:特征向量矩阵(列)}
+  const a=Float64Array.from(A),V=new Float64Array(n*n).map((_,i)=>i%(n+1)===0?1:0);
+  for(let sweeps=0;sweeps<60;sweeps++){
+    let off=0,pq=0,pq2=0;
+    for(let p=0;p<n;p++)for(let q=p+1;q<n;q++){const v=Math.abs(a[p*n+q]);if(v>off){off=v;pq=p;pq2=q;}}
+    if(off<1e-10)break;
+    const p=pq,q=pq2,app=a[p*n+p],aqq=a[q*n+q],apq=a[p*n+q];
+    const th=0.5*Math.atan2(2*apq,aqq-app),co=Math.cos(th),si=Math.sin(th);
+    for(let k=0;k<n;k++){
+      const akp=a[k*n+p],akq=a[k*n+q];a[k*n+p]=co*akp-si*akq;a[k*n+q]=si*akp+co*akq;
+    }
+    for(let k=0;k<n;k++){
+      const apk=a[p*n+k],aqk=a[q*n+k];a[p*n+k]=co*apk-si*aqk;a[q*n+k]=si*apk+co*aqk;
+      const vkp=V[k*n+p],vkq=V[k*n+q];V[k*n+p]=co*vkp-si*vkq;V[k*n+q]=si*vkp+co*vkq;
+    }
+  }
+  const d=[];for(let i=0;i<n;i++)d.push(a[i*n+i]);
+  return{d,V};
+}
+let PHOTO=null,SG=[],UL=[],VL=[];
+function drawGray(cv,A){
+  const ctx=cv.getContext('2d'),img=ctx.createImageData(cv.width,cv.height);
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    const g=Math.max(0,Math.min(255,A[i*N+j]));
+    const o=((i*cv.height/N|0)*cv.width+(j*cv.width/N|0))*4;
+    img.data[o]=g;img.data[o+1]=g+10;img.data[o+2]=g+25;img.data[o+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+document.getElementById('photoBtn').addEventListener('click',()=>{
+  const btn=this;PHOTO=makePhoto();drawGray(document.getElementById('origC'),PHOTO);
+  // AtA
+  const AtA=new Float64Array(N*N);
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){let s=0;for(let k=0;k<N;k++)s+=PHOTO[k*N+i]*PHOTO[k*N+j];AtA[i*N+j]=s;}
+  const{d,V}=jacobi(AtA,N);
+  const idx=[...Array(N).keys()].sort((a,b)=>d[b]-d[a]);
+  SG=idx.map(i=>Math.sqrt(Math.max(d[i],0)));VL=idx.map(i=>{const c=new Float64Array(N);for(let r=0;r<N;r++)c[r]=V[r*N+i];return c;});
+  UL=VL.map((v,j)=>{const u=new Float64Array(N),s=SG[j];for(let i=0;i<N;i++){let t=0;for(let k=0;k<N;k++)t+=PHOTO[i*N+k]*v[k];u[i]=s>1e-9?t/s:0;}return u;});
+  document.getElementById('kslide').disabled=false;
+  const tot=SG.reduce((a,b)=>a+b*b,0);
+  document.getElementById('kval').dataset.tot=tot;
+  document.getElementById('photoBtn').textContent='✅ 已拍摄（128×128，SVD 完成）';
+  updateRecon();
+});
+function updateRecon(){
+  const k=+document.getElementById('kslide').value;
+  document.getElementById('kval').textContent=k;
+  const cv=document.getElementById('recC'),ctx=cv.getContext('2d'),img=ctx.createImageData(cv.width,cv.height);
+  let err=0;
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+    let v=0;for(let m=0;m<k;m++)v+=SG[m]*UL[m][i]*VL[m][j];
+    err+=(PHOTO[i*N+j]-v)**2;
+    const g=Math.max(0,Math.min(255,v));
+    const o=((i*cv.height/N|0)*cv.width+(j*cv.width/N|0))*4;
+    img.data[o]=g;img.data[o+1]=g+10;img.data[o+2]=g+25;img.data[o+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  const tot=+document.getElementById('kval').dataset.tot||SG.reduce((a,b)=>a+b*b,0);
+  const kept=SG.slice(0,k).reduce((a,b)=>a+b*b,0);
+  document.getElementById('stK').textContent=k;
+  document.getElementById('stPve').textContent=(kept/tot*100).toFixed(1)+'%';
+  document.getElementById('stErr').textContent=Math.sqrt(err).toFixed(0);
+  document.getElementById('stRatio').textContent=((k*(2*N+1))/(N*N)).toFixed(3);
+}
+document.getElementById('kslide').addEventListener('input',updateRecon);
+
+/* ================= 第7节：推荐系统 ================= */
+const USERS=['小明','小红','小刚','小美','阿强'];
+const MOVIES=['星际穿越','疯狂动物城','泰坦尼克号','蜘蛛侠','千与千寻','盗梦空间'];
+const R=[[5,4,0,0,3,5],[0,0,5,4,3,0],[4,0,0,5,0,4],[0,5,4,0,5,0],[3,3,0,4,0,0]];
+let RV=[],RS=[],RU=[];
+(function(){
+  // AtA for 6x6
+  const n=MOVIES.length,AtA=new Float64Array(n*n);
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){let s=0;for(let k=0;k<USERS.length;k++)s+=R[k][i]*R[k][j];AtA[i*n+j]=s;}
+  const{d,V}=jacobi(AtA,n);
+  const idx=[...Array(n).keys()].filter(i=>d[i]>1e-9).sort((a,b)=>d[b]-d[a]);
+  RS=idx.map(i=>Math.sqrt(d[i]));
+  RV=idx.map(i=>{const c=[];for(let r=0;r<n;r++)c.push(V[r*n+i]);return c;});
+  RU=RV.map((v,j)=>USERS.map((_,u)=>RS[j]>1e-9?R[u].reduce((s,r,i)=>s+r*v[i],0)/RS[j]:0));
+  const sel=document.getElementById('userSel');
+  USERS.forEach((u,i)=>{const op=document.createElement('option');op.value=i;op.textContent=u;sel.appendChild(op);});
+})();
+const cScale=v=>{const t=Math.max(0,Math.min(5,v))/5;
+  return `background:linear-gradient(135deg,#4de3d1,#8b7bff ${t*100}%,#1a2450 ${t*100}%)`};
+function renderReco(){
+  const k=+document.getElementById('rkslide').value,u=+document.getElementById('userSel').value;
+  document.getElementById('rkval').textContent=k;
+  // 原始热力图
+  const ho=document.getElementById('heatOrig');ho.style.gridTemplateColumns=`70px repeat(${MOVIES.length},1fr)`;ho.innerHTML='<div></div>'+MOVIES.map(m=>`<div class="hlabel">${m}</div>`).join('');
+  USERS.forEach((un,ui)=>{
+    ho.innerHTML+=`<div class="hlabel">${un}</div>`+R[ui].map(v=>`<div class="cell ${v===0?'miss':''}" style="${v?cScale(v):''}">${v||'未看'}</div>`).join('');
+  });
+  // 重构热力图 + 推荐
+  const hr=document.getElementById('heatRec');hr.style.gridTemplateColumns=`70px repeat(${MOVIES.length},1fr)`;hr.innerHTML='<div></div>'+MOVIES.map(m=>`<div class="hlabel">${m}</div>`).join('');
+  const pred=[];
+  USERS.forEach((un,ui)=>{
+    const row=MOVIES.map((_,mi)=>{let v=0;for(let m=0;m<k;m++)v+=RS[m]*RU[m][ui]*RV[m][mi];return Math.max(0,Math.min(5,v));});
+    pred.push(row);
+    hr.innerHTML+=`<div class="hlabel">${un}</div>`+row.map((v,mi)=>`<div class="cell ${R[ui][mi]===0?'':'miss'}" style="${R[ui][mi]===0?cScale(v):''}">${R[ui][mi]===0?v.toFixed(1):'已看 '+R[ui][mi]}</div>`).join('');
+  });
+  const recs=MOVIES.map((m,mi)=>({m,v:pred[u][mi]})).filter(x=>R[u][MOVIES.indexOf(x.m)]===0).sort((a,b)=>b.v-a.v).slice(0,3);
+  document.getElementById('recoOut').innerHTML=recs.map((r,i)=>`<p style="margin:6px 0">🏅 第 ${i+1} 名：<b style="color:var(--cy)">${r.m}</b> —— 预测评分 <b style="color:var(--yl)">${r.v.toFixed(2)}</b> / 5</p>`).join('')||'<p>全部看完了，真·影迷！</p>';
+}
+document.getElementById('rkslide').addEventListener('input',renderReco);
+document.getElementById('userSel').addEventListener('input',renderReco);
+renderReco();
+
+/* ================= 第8节：Ridge 收缩曲线 ================= */
+const RC=document.getElementById('ridge'),RX=RC.getContext('2d');
+const sig=[9.5,7.2,4.8,3.1,2.0,1.3,0.8,0.5,0.3,0.18,0.1,0.06];
+function drawRidge(){
+  const lam=+document.getElementById('lam').value;document.getElementById('lamv').textContent=lam;
+  RX.clearRect(0,0,1000,380);
+  const L=70,Rt=980,T=30,B=330,n=sig.length;
+  const X=i=>L+(Rt-L)*i/(n-1),Y=f=>B-(B-T)*f;
+  RX.strokeStyle='#26335e';RX.beginPath();RX.moveTo(L,T);RX.lineTo(L,B);RX.lineTo(Rt,B);RX.stroke();
+  RX.font='12px sans-serif';RX.fillStyle='#9fb0e0';
+  for(let g=0;g<=5;g++){RX.strokeStyle='#1c2950';RX.beginPath();RX.moveTo(L,Y(g/5));RX.lineTo(Rt,Y(g/5));RX.stroke();RX.fillText((g/5).toFixed(1),L-28,Y(g/5)+4);}
+  RX.fillText('保留比例 σ²/(σ²+λ)',L,T-10);
+  // 曲线 + 点
+  for(let i=0;i<n;i++){
+    const f=sig[i]*sig[i]/(sig[i]*sig[i]+lam);
+    if(i<n-1){const f2=sig[i+1]*sig[i+1]/(sig[i+1]*sig[i+1]+lam);
+      RX.strokeStyle='#4de3d1';RX.lineWidth=3;RX.beginPath();RX.moveTo(X(i),Y(f));RX.lineTo(X(i+1),Y(f2));RX.stroke();}
+    RX.fillStyle='#8b7bff';RX.beginPath();RX.arc(X(i),Y(f),7,0,7);RX.fill();
+    RX.fillStyle='#c9c0ff';RX.fillText('σ'+(i+1),X(i)-8,B+20);
+  }
+  // λ=0 参考线
+  RX.strokeStyle='#ff7ad9';RX.setLineDash([6,6]);RX.beginPath();RX.moveTo(L,Y(1));RX.lineTo(Rt,Y(1));RX.stroke();RX.setLineDash([]);
+  RX.fillStyle='#ff7ad9';RX.fillText('λ=0：完全不收缩（退化为 OLS）',Rt-260,Y(1)-8);
+  // 注释第一个点
+  const f0=sig[0]*sig[0]/(sig[0]*sig[0]+lam);
+  RX.fillStyle='#e8ecff';RX.font='700 13px sans-serif';
+  RX.fillText('主结构 σ₁ 保留 '+f0.toFixed(2),X(0)+12,Y(f0)-10);
+  const fl=sig[n-1]*sig[n-1]/(sig[n-1]*sig[n-1]+lam);
+  RX.fillStyle='#ff6b6b';RX.fillText('噪声方向 σ₁₂ 仅保留 '+fl.toFixed(2)+' 👋',X(n-1)-210,Y(fl)+22);
+}
+document.getElementById('lam').addEventListener('input',drawRidge);
+drawRidge();
+
+/* ================= 第9节：测验 ================= */
+const QUIZ=[
+  {q:'对任意矩形矩阵 A，右奇异向量 vⱼ 是什么的特征向量？',
+   opts:['A 本身','AᵀA（对称半正定阵）','AAᵀ 转置','单位矩阵'],ans:1,
+   fb:'✅ 正确！AᵀA vⱼ = σⱼ² vⱼ，vⱼ 是 AᵀA 的标准正交特征向量。'},
+  {q:'Eckart–Young 定理说，截断 SVD Aₖ 在什么意义下是最优秩-k 逼近？',
+   opts:['Frobenius 范数（也含 2-范数）','曼哈顿范数','只看对角线元素','统计学上的 AIC'],ans:0,
+   fb:'✅ 正确！Aₖ = argmin_{rank(B)≤k} ‖A−B‖_F，最小误差 = 丢弃奇异值的平方和开根号。'},
+  {q:'岭回归中，方向 σⱼ 的收缩因子是？',
+   opts:['σⱼ / (σⱼ + λ)','σⱼ² / (σⱼ² + λ)','1 / (1 + λσⱼ)','λ / (σⱼ² + λ)'],ans:1,
+   fb:'✅ 正确！σⱼ²/(σⱼ²+λ)：大 σⱼ ≈ 保留，小 σⱼ ≈ 清零。'}];
+const qb=document.getElementById('quizBox');
+qb.innerHTML=QUIZ.map((Q,qi)=>`<div class="quizq"><b style="color:var(--yl)">Q${qi+1}.</b> ${Q.q}
+  ${Q.opts.map((o,oi)=>`<button class="opt" data-q="${qi}" data-o="${oi}">${String.fromCharCode(65+oi)}. ${o}</button>`).join('')}
+  <div class="fb" id="fb${qi}"></div></div>`).join('');
+qb.addEventListener('click',e=>{
+  const b=e.target.closest('.opt');if(!b)return;
+  const qi=+b.dataset.q,oi=+b.dataset.o,ok=oi===QUIZ[qi].ans;
+  qb.querySelectorAll(`.opt[data-q="${qi}"]`).forEach(x=>{x.disabled=true;if(+x.dataset.o===QUIZ[qi].ans)x.classList.add('right');});
+  if(!ok)b.classList.add('wrong');
+  document.getElementById('fb'+qi).innerHTML=`<span style="color:${ok?'var(--ok)':'var(--bad)'}">${QUIZ[qi].fb}</span>`;
+});
+</script>
+<script>
+/* ================= s4b 手算实战 stepper ================= */
+const STEPS=[
+{t:"第 1 步 · 计算 AᵀA（对称半正定）",h:`<p style="color:var(--sub)">逐元素算：(AᵀA)ⱼₖ = Σᵢ Aᵢⱼ·Aᵢₖ</p>
+<div class="formula">(AᵀA)₁₁ = 1²+2²+2² = 9，&nbsp;(AᵀA)₁₂ = 1·1+2·2+2·(−2) = 1，&nbsp;(AᵀA)₂₂ = 1²+2²+(−2)² = 9</div>
+<div class="formula">AᵀA = [[9, 1], [1, 9]]&nbsp;&nbsp;<b>✓ 对称</b>（且特征值将 ≥ 0，即半正定）</div>`},
+{t:"第 2 步 · 特征值 → 奇异值",h:`<p style="color:var(--sub)">解特征方程 det(AᵀA − λI) = (9−λ)² − 1 = 0：</p>
+<div class="formula">λ₁ = 10，&nbsp;λ₂ = 8&nbsp;&nbsp;⟹&nbsp;&nbsp;σ₁ = √10 ≈ 3.162，&nbsp;σ₂ = √8 = 2√2 ≈ 2.828</div>
+<p style="color:var(--sub)">两个正奇异值 → <b style="color:var(--cy)">rank(A) = 2</b>。奇异值永远是特征值开根号：σⱼ = √λⱼ(AᵀA)。</p>`},
+{t:"第 3 步 · 求右奇异向量 vⱼ（V 的正交基）",h:`<p style="color:var(--sub)">代回 (AᵀA − λⱼI)v = 0 解特征向量，再单位化：</p>
+<div class="formula">λ₁=10：[[−1, 1],[1, −1]]v = 0 ⟹ v₁ = (1, 1)/√2 ≈ (0.71, 0.71)</div>
+<div class="formula">λ₂=8：[[1, 1],[1, 1]]v = 0 ⟹ v₂ = (−1, 1)/√2 ≈ (−0.71, 0.71)</div>
+<p style="color:var(--sub)">正交性检查：v₁ᵀv₂ = 0 ✓，‖v₁‖ = ‖v₂‖ = 1 ✓ → <b>V = [v₁ v₂] 是 2×2 正交阵</b></p>`},
+{t:"第 4 步 · 求左奇异向量 uⱼ = Avⱼ / σⱼ",h:`<div class="formula">Av₁ = (2, 4, 0)/√2&nbsp;&nbsp;⟹&nbsp;&nbsp;u₁ = Av₁/σ₁ = (1, 2, 0)/√5 ≈ (0.45, 0.89, 0)</div>
+<div class="formula">Av₂ = (0, 0, −4)/√2&nbsp;&nbsp;⟹&nbsp;&nbsp;u₂ = Av₂/σ₂ = (0, 0, −1)</div>
+<p style="color:var(--sub)">⚠️ 注意：Av₁ 要除以 √2·√10 = √20（不是 √10）！<br>正交性检查：u₁ᵀu₂ = 0 ✓，‖u₁‖ = ‖u₂‖ = 1 ✓</p>`},
+{t:"第 5 步 · 补全 U：从左零空间取第三个正交基",h:`<p style="color:var(--sub)">U 必须是 <b>3×3 正交阵</b>，但非零奇异值只有 2 个。u₃ 要同时 ⊥ u₁、⊥ u₂ —— 即 Aᵀ 的零空间（左零空间）中的单位向量：</p>
+<div class="formula">u₂ = (0,0,−1) ⟹ u₃ 必在 xy 平面 (a, b, 0)；a + 2b = 0 ⟹ u₃ = (2, −1, 0)/√5 ≈ (0.89, −0.45, 0)</div>
+<p style="color:var(--sub)">工程实现：对 e₁, e₂, e₃ 跑一遍 Gram-Schmidt，就能自动补出 u₃。<b style="color:var(--yl)">它对应 Σ 中 σ₃ = 0 的那一列</b>。</p>`},
+{t:"第 6 步 · 组装 UΣVᵀ 并验证",h:`<div class="formula">σ₁u₁v₁ᵀ = (1,2,0)ᵀ(1,1) = [[1, 1], [2, 2], [0, 0]]</div>
+<div class="formula">σ₂u₂v₂ᵀ = (0,0,1)ᵀ(2, −2) = [[0, 0], [0, 0], [2, −2]]</div>
+<div class="formula"><b>求和 = [[1, 1], [2, 2], [2, −2]] = A ✓ 完全复原！</b></div>
+<p style="color:var(--sub)">外积展开 A = σ₁u₁v₁ᵀ + σ₂u₂v₂ᵀ 的每一项都拿到了"整数矩阵"——说明前面每一步都算对了。</p>`}];
+let curStep=0;
+function renderStep(){
+  document.getElementById('stepBox').innerHTML=
+    `<h3 style="color:var(--vio);margin-top:6px">${STEPS[curStep].t}</h3>${STEPS[curStep].h}`;
+  document.getElementById('stepDots').textContent=`${curStep+1} / ${STEPS.length}`;
+}
+function stepMove(d){curStep=Math.min(STEPS.length-1,Math.max(0,curStep+d));renderStep();}
+renderStep();
+function verifySVD(){
+  const A=[[1,1],[2,2],[2,-2]],m=3,n=2;
+  const AtA=new Float64Array(n*n);
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){let s=0;for(let k=0;k<m;k++)s+=A[k][i]*A[k][j];AtA[i*n+j]=s;}
+  const{d,V}=jacobi(AtA,n);
+  const idx=[0,1].sort((a,b)=>d[b]-d[a]);
+  const S=idx.map(i=>Math.sqrt(Math.max(d[i],0)));
+  const VV=idx.map(i=>[V[i],V[n+i]]);
+  const UU=VV.map((v,j)=>{const s=S[j]||1;return [ (A[0][0]*v[0]+A[0][1]*v[1])/s,(A[1][0]*v[0]+A[1][1]*v[1])/s,(A[2][0]*v[0]+A[2][1]*v[1])/s];});
+  let maxErr=0;const recon=[[0,0],[0,0],[0,0]];
+  for(let i=0;i<m;i++)for(let j=0;j<n;j++){let v=0;for(let k=0;k<2;k++)v+=S[k]*UU[k][i]*VV[k][j];recon[i][j]=v;maxErr=Math.max(maxErr,Math.abs(v-A[i][j]));}
+  const f=x=>x.toFixed(3);
+  document.getElementById('verifyOut').innerHTML=
+   `<div class="stat" style="display:inline-block;margin:4px"><div class="n">${f(S[0])}, ${f(S[1])}</div><div class="l">数值 σ₁, σ₂（手算 3.162, 2.828）</div></div>
+    <div class="stat" style="display:inline-block;margin:4px"><div class="n" style="font-size:14px">(${f(VV[0][0])}, ${f(VV[0][1])}) (${f(VV[1][0])}, ${f(VV[1][1])})</div><div class="l">数值 v₁, v₂</div></div>
+    <div class="stat" style="display:inline-block;margin:4px"><div class="n" style="font-size:13px">(${f(UU[0][0])}, ${f(UU[0][1])}, ${f(UU[0][2])})<br>(${f(UU[1][0])}, ${f(UU[1][1])}, ${f(UU[1][2])})</div><div class="l">数值 u₁, u₂</div></div>
+    <div class="stat" style="display:inline-block;margin:4px"><div class="n" style="color:${maxErr<1e-8?'var(--ok)':'var(--bad)'}">${maxErr.toExponential(1)}</div><div class="l">‖A − UΣVᵀ‖ 最大误差</div></div>
+    <p style="color:var(--sub);margin-top:8px">数值结果与手算一致（特征向量符号可能整体差一个 ±，不影响分解）✅</p>`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>正则化回归交互式课件 · Ridge &amp; Lasso</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}]});"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+:root{
+  --ink:#1a2332; --paper:#f7f8fa; --brand:#2563eb; --brand2:#0e7490;
+  --accent:#dc2626; --warn:#d97706; --ok:#059669; --line:#e2e8f0;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--paper);color:var(--ink)}
+header{position:sticky;top:0;z-index:50;background:#0f172a;color:#fff;padding:10px 20px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+header h1{margin:0;font-size:18px}
+header .sub{font-size:12px;color:#94a3b8;margin-top:2px}
+nav{display:flex;gap:6px;flex-wrap:wrap;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:64px;z-index:40}
+nav button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;transition:all .15s}
+nav button:hover{border-color:var(--brand);color:var(--brand)}
+nav button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+main{max-width:1000px;margin:0 auto;padding:24px 20px 80px}
+.page{display:none;animation:fade .35s}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h2{font-size:22px;border-left:5px solid var(--brand);padding-left:12px;margin-top:0}
+h3{font-size:17px;color:var(--brand2);margin-top:28px}
+h4{font-size:15px;color:var(--ink);margin:18px 0 8px}
+.formula{background:#fff;border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:10px;padding:14px 18px;margin:14px 0;overflow-x:auto;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.formula.red{border-left-color:var(--accent)}
+.formula.green{border-left-color:var(--ok)}
+.note{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin:14px 0;font-size:14px;line-height:1.8}
+.warn{background:#fffbeb;border-color:#fcd34d}
+.good{background:#ecfdf5;border-color:#6ee7b7}
+.note b{color:var(--brand)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0}
+canvas.chart{width:100%!important}
+.stepbox{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:12px 16px;margin:10px 0;display:none}
+.stepbox.show{display:block;animation:fade .3s}
+.stepbox .tag{display:inline-block;background:var(--brand);color:#fff;font-size:11px;border-radius:6px;padding:2px 8px;margin-bottom:6px}
+button.reveal{background:var(--brand2);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:14px;cursor:pointer;margin:6px 0}
+button.reveal:hover{filter:brightness(1.1)}
+.pager{display:flex;justify-content:space-between;margin-top:36px}
+.pager button{background:#0f172a;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:14px;cursor:pointer}
+.pager button:disabled{opacity:.3;cursor:default}
+input[type=range]{width:100%;accent-color:var(--brand)}
+.slidelabel{font-size:14px;margin:8px 0 2px}
+.slidelabel b{color:var(--brand)}
+table.mtx{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+table.mtx th{background:#0f172a;color:#fff;padding:9px 10px;text-align:left}
+table.mtx td{border:1px solid var(--line);padding:8px 10px;background:#fff}
+table.mtx tr:nth-child(even) td{background:#f8fafc}
+pre{background:#0f172a;border-radius:10px;padding:16px;overflow-x:auto;font-size:13px;line-height:1.65}
+code.hljs{background:#0f172a}
+.katex{font-size:1.06em!important}
+.katex-display{margin:8px 0!important}
+details{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:12px 0}
+summary{cursor:pointer;font-weight:600;color:var(--brand2)}
+.legend-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.qa{background:#fdf4ff;border-color:#d8b4fe}
+footer{text-align:center;color:#94a3b8;font-size:12px;padding:24px}
+.badge{display:inline-block;background:#e0e7ff;color:#3730a3;font-size:12px;border-radius:20px;padding:3px 12px;margin-right:6px}
+.hl{background:linear-gradient(transparent 60%,#fde68a 60%)}
+canvas.geo{display:block;margin:0 auto;max-width:100%;background:#fff;border-radius:8px}
+</style>
+</head>
+<body>
+<header>
+  <h1>正则化回归：Ridge &amp; Lasso · 交互式课件</h1>
+  <div class="sub">《回归数据分析方法与 Python 实战》第二次课 · 90 分钟 · 公式逐步推导 + 可交互图形</div>
+</header>
+<nav id="nav"></nav>
+<main>
+
+
+<!-- ============ PAGE 1 ============ -->
+<section class="page" id="p0">
+<h2>① 高维数据的危机：OLS 为何会失效？</h2>
+<div class="note"><b>本页定位：</b>这是全课的"问题定义"页。正则化不是凭空而来的技巧——它是 OLS 在三个层面同时崩塌后的<b>必然回应</b>。我们用"解方程 → 矩阵谱结构 → 抽样分布 → 预测表现"四个视角，把失效机制彻底讲清楚。</div>
+
+<h3>1.1 视角一：从正规方程看失效的两种模式</h3>
+<p>OLS 的解由<b>正规方程（Normal Equations）</b>给出：</p>
+<div class="formula">
+\[
+X^{T}X\,\widehat{\boldsymbol\beta}=X^{T}Y
+\qquad\Longleftrightarrow\qquad
+\widehat{\boldsymbol\beta}_{\text{OLS}}=\big(X^{T}X\big)^{-1}X^{T}Y\ \ (\text{若逆存在})
+\]
+</div>
+<p>方程是否有<b>唯一解</b>，完全取决于矩阵 \(X^{T}X\) 是否满秩。而 \(\operatorname{rank}(X^{T}X)=\operatorname{rank}(X)\le\min(n,p)\)，于是有两种失效模式：</p>
+<div class="cols">
+<div class="card">
+<h4>🔴 模式 A：秩亏（p ≥ n）——"解根本不存在（不唯一）"</h4>
+<p style="font-size:14px;line-height:1.9">当 \(p&gt;n\)：\(\operatorname{rank}(X)\le n&lt;p\)，矩阵 \(X^{T}X\) 是 \(p\times p\) 的<b>秩亏矩阵</b>，行列式为 0，逆不存在。正规方程有<b>无穷多解</b>。</p>
+</div>
+<div class="card">
+<h4>🟠 模式 B：近奇异（p &lt; n 但共线）——"解存在但极不稳定"</h4>
+<p style="font-size:14px;line-height:1.9">当 \(p&lt;n\) 但某些特征近似线性相关：\(X^{T}X\) 可逆，但最小特征值接近 0，逆矩阵元素巨大 → 解在数值上和统计上都<b>极不稳定</b>。</p>
+</div>
+</div>
+<h4>秩亏的几何意义：为什么"无穷多解"等于"每个解都不可信"？</h4>
+<p style="font-size:14px;line-height:1.9">把 \(X\) 的列看作 \(\mathbb{R}^n\) 中的 \(p\) 个向量。它们最多张成一个 \(\min(n,p)\) 维的子空间（列空间）。若 \(\widehat{\boldsymbol\beta}^{(1)}\)、\(\widehat{\boldsymbol\beta}^{(2)}\) 是两个不同的解，则</p>
+<div class="formula">
+\[
+X\widehat{\boldsymbol\beta}^{(1)}=X\widehat{\boldsymbol\beta}^{(2)}=\widehat Y
+\;\Longrightarrow\;
+X\big(\widehat{\boldsymbol\beta}^{(1)}-\widehat{\boldsymbol\beta}^{(2)}\big)=\mathbf 0
+\;\Longrightarrow\;
+\text{差向量落在 } X \text{ 的零空间 } \mathcal N(X) \text{ 中}
+\]
+</div>
+<p style="font-size:14px;line-height:1.9">\(\dim\mathcal N(X)=p-\operatorname{rank}(X)\ge p-n&gt;0\)。也就是说：<b>零空间里任意方向的扰动都不会改变拟合值</b>——无穷多个解给出完全相同的 \(\widehat Y\) 和相同的 RSS。最小二乘准则"一视同仁"，数据中<b>没有任何信息</b>能帮助我们在它们之间做出选择。此时任何单一解都不可信——必须有外部准则来"补做决定"，这正是正则化（以及第 ⑨ 页 PCR/PLS 降维）所扮演的角色。</p>
+
+<h3>1.2 视角二：SVD 解剖——方差爆炸的精确机制</h3>
+<p>对 \(X\) 做奇异值分解 \(X=UDV^{T}\)，OLS 解与其协方差可以写成极醒目的形式：</p>
+<div class="formula red">
+\[
+\widehat{\boldsymbol\beta}_{\text{OLS}}=\big(X^{T}X\big)^{-1}X^{T}Y=VD^{-1}U^{T}Y=\sum_{j=1}^{p}\underbrace{\frac{u_j^{T}Y}{d_j}}_{\text{要"除以 } d_j\text{" 的数}}\,v_j
+\qquad
+\operatorname{Var}\!\left(\widehat{\boldsymbol\beta}_{\text{OLS}}\right)=\sigma^{2}VD^{-2}V^{T}=\sigma^{2}\sum_{j=1}^{p}\frac{1}{d_j^{2}}\,v_j v_j^{T}
+\]
+</div>
+<p style="font-size:14px;line-height:1.9">两个公式对照着看，机制一目了然：</p>
+<ul style="line-height:2;font-size:14px">
+<li><b>拟合值层面是安全的：</b>\(\widehat Y=UU^TY=\sum_j (u_j^TY)\,u_j\)——只投影，<b>没有任何除法</b>，所以训练拟合永远"看起来很好"；</li>
+<li><b>系数层面是危险的：</b>要还原出系数，每个方向必须除以 \(d_j\)。在小奇异值方向 \(d_j\to 0\) 上，分子 \(u_j^TY\) 几乎只是噪声水平（该方向没有真实信号），却被<b>除以一个接近零的数</b>——噪声被放大成百上千倍；</li>
+<li><b>方差公式精确记录了放大倍数：</b>\(1/d_j^2\)。只要有一个 \(d_j\) 接近 0，总方差就爆炸。共线性越严重，最小奇异值越小，爆炸越剧烈。</li>
+</ul>
+<div class="warn note"><b>一句话总结失效链条：</b>训练误差只看投影（安全）→ 但我们关心的是<b>系数/预测</b>（要除 \(d_j\)，危险）→ 新数据的噪声实现不同，\(\widehat\beta\) 剧烈抖动 → 对新样本的预测失败。这就是"低训练误差 + 高测试误差"的矩阵级解释。</div>
+
+<div class="panel">
+<h4>🧪 交互实验 A：共线性如何"吹大"方差（2 特征 VIF 特例）</h4>
+<p style="font-size:14px">两特征情形是上面的特例：\(X^TX\) 的特征值为 \(1\pm\rho\)，由 \(\operatorname{Var}(\hat\beta)=\sigma^2 V\,\mathrm{diag}\big(\tfrac{1}{1+\rho},\tfrac{1}{1-\rho}\big)V^T\) 可得</p>
+<div class="formula">
+\[
+\operatorname{Var}(\hat\beta_j)=\frac{\sigma^{2}}{n}\cdot\frac{1}{1-\rho^{2}}
+\qquad\text{（方差膨胀因子 } \mathrm{VIF}=\tfrac{1}{1-\rho^{2}}\text{）}
+\]
+</div>
+<div class="slidelabel">拖动 ρ：<b id="rhoVal">0.50</b></div>
+<input type="range" id="rhoSlider" min="0" max="0.99" step="0.01" value="0.5">
+<canvas id="vifChart" class="chart" height="180"></canvas>
+<div class="note warn" id="vifMsg"></div>
+</div>
+
+<h3>1.3 视角三：抽样分布——"抖"给同学们看</h3>
+<p style="font-size:14px;line-height:1.9">方差是<b>抽象数字</b>，现在直接观察估计量本身：固定真实模型 \(\beta=(1.2,\,0.8)\)、\(\sigma=0.6\)、\(n=40\)，重复抽样 60 次，每次重新估计 \(\widehat{\boldsymbol\beta}\)，把 60 个估计值画成散点云。云的"扩散程度"就是方差的几何化身。</p>
+<div class="panel">
+<h4>☁️ 交互实验 B：\(\widehat\beta\) 的抽样分布云图</h4>
+<div class="cols" style="grid-template-columns:1fr 230px;align-items:start">
+<div>
+  <div class="slidelabel">特征相关系数 ρ = <b id="sampRhoVal">0.50</b>　<span style="color:#64748b;font-size:12.5px">（每个 ρ 下重新模拟 60 次抽样）</span></div>
+  <input type="range" id="sampRho" min="0" max="0.98" step="0.01" value="0.5">
+  <canvas id="sampChart" class="chart" height="270"></canvas>
+</div>
+<div>
+  <div class="note" style="margin-top:34px;font-size:13.5px;line-height:1.9">
+  <span class="legend-dot" style="background:#dc2626"></span> 60 次独立抽样的 β̂<br>
+  <span class="legend-dot" style="background:#0f172a"></span> 真实 β=(1.2, 0.8)<br>
+  <span class="legend-dot" style="background:#2563eb"></span> 理论 95% 置信椭圆<br>
+  <span class="legend-dot" style="background:#94a3b8"></span> 方向 (1,1)/√2（共线方向）
+  </div>
+  <div class="note warn" id="sampMsg" style="font-size:13.5px;line-height:1.9"></div>
+</div>
+</div>
+</div>
+<p style="font-size:14px;line-height:1.9">请特别观察 ρ 接近 1 时云图的形状：它会被拉成沿 \((1,1)\) 方向的<b>一根细针</b>。含义深刻——数据几乎只能确定 \(\beta_1+\beta_2\) 的和，<b>根本无法区分</b>两个系数各自的值：\((1.2,0.8)\) 和 \((0.9,1.1)\) 给出几乎一样的拟合。单个系数估计于是产生巨大方差，这正是共线性的几何面孔。</p>
+
+<h3>1.4 视角四：过拟合现场——训练误差越漂亮，测试误差越惨</h3>
+<p style="font-size:14px;line-height:1.9">最后从<b>预测性能</b>看失效。设真实模型只依赖 3 个特征（\(y=2x_1-1.5x_2+x_3+0.8\varepsilon\)），训练集 \(n=40\)。我们不断往模型里加入<b>与 y 毫无关系</b>的噪声特征（真实系数为 0），看 OLS 的表现：</p>
+<div class="panel">
+<h4>📉 交互实验 C：噪声特征数量 p 的双面曲线</h4>
+<div class="slidelabel">噪声特征总数 p = <b id="ofPVal">10</b>　（含 3 个真实特征，n = 40）</div>
+<input type="range" id="ofSlider" min="3" max="38" value="10">
+<canvas id="ofChart" class="chart" height="280"></canvas>
+<div class="note" id="ofMsg"></div>
+</div>
+<ul style="line-height:2;font-size:14px">
+<li><b>训练 \(R^2\) 单调上升：</b>即便全是噪声变量，OLS 也能找到"碰巧相关"的方向，把训练误差越压越低——当 \(p=n-1\) 时甚至能精确插值（训练 \(R^2=1\)）；</li>
+<li><b>测试 MSE 先平后爆：</b>真实系数为 0 的噪声方向在训练集上被估计出<b>非零</b>系数（上一节讲的除以 \(d_j\) 的放大效应），这些纯噪声系数在新数据上造成纯粹的损害；</li>
+<li><b>背离点就在 \(p\approx n\) 附近：</b>训练指标与测试指标背道而驰的程度，正是"过拟合"的可视化定义。</li>
+</ul>
+
+<h3>1.5 偏差-方差权衡：失效问题的理论收束</h3>
+<p style="font-size:14px;line-height:1.9">现在可以给"失效"一个精确的量化刻画。估计量的<b>期望均方误差</b>分解为：</p>
+<div class="formula red">
+\[
+\operatorname{MSE}\!\left(\widehat{\boldsymbol\beta}\right)
+=\mathbb{E}\!\left[\left\|\widehat{\boldsymbol\beta}-\boldsymbol\beta\right\|^{2}\right]
+=\underbrace{\operatorname{Bias}\!\left(\widehat{\boldsymbol\beta}\right)^{2}}_{\text{偏差}^2}
++\underbrace{\operatorname{Var}\!\left(\widehat{\boldsymbol\beta}\right)}_{\text{方差}}
+\]
+</div>
+<p style="font-size:14px;line-height:1.9">OLS 的问题是：Bias \(=0\)（无偏），但由 1.2 节可知 Var 项里藏着 \(\sum_j 1/d_j^2\)——高维/共线下这一项失控，MSE 被方差彻底主导。治理思路只能是：<b>主动放弃一部分无偏性（引入可控的小偏差），去交换方差的大幅下降</b>。</p>
+<div class="panel">
+<h4>📉 交互图：正则化强度 λ 如何重塑 MSE</h4>
+<div class="slidelabel">λ = <b id="bvLam">0.00</b>（滑块位置即图中竖线）</div>
+<input type="range" id="bvSlider" min="0" max="100" value="28">
+<canvas id="bvChart" class="chart" height="230"></canvas>
+<div class="note" id="bvMsg"></div>
+</div>
+<div class="note good"><b>正则化核心思想 💡</b><br>与其坚持绝对无偏但付出巨大方差，不如在目标函数中加入一个<b>收缩惩罚项（Shrinkage Penalty）</b>：牺牲一小部分无偏性（引入微小 Bias），换取方差的大幅下降，从而显著降低整体 MSE。接下来的 Ridge 与 Lasso，就是这个思想的两种具体实现。</div>
+
+<details class="qa"><summary>🤔 课堂快问 1：OLS 在 p &gt; n 时为什么"无解"？从秩的角度一句话说明。</summary>
+<p style="font-size:14px;line-height:1.8">因为 \(\operatorname{rank}(X^T X)=\operatorname{rank}(X)\le n &lt; p\)，\(X^T X\) 是 \(p\times p\) 的<b>秩亏</b>矩阵，行列式为 0，逆矩阵不存在，正规方程有无穷多解。</p>
+</details>
+<details class="qa"><summary>🤔 课堂快问 2：拟合值 \(\widehat Y\) 的计算里没有任何除法，为什么系数 \(\widehat\beta\) 却会爆炸？</summary>
+<p style="font-size:14px;line-height:1.8">\(\widehat Y=UU^TY\) 只做投影，但把系数"翻译"回 \(p\) 维特征空间时必须除以各主方向的奇异值：\(\hat\beta=\sum_j (u_j^TY/d_j)v_j\)。小 \(d_j\) 方向上的噪声投影 \(u_j^TY\) 被近零数除 → 系数在该方向剧烈放大，方差贡献 \(\sigma^2/d_j^2\)。</p>
+</details>
+<details class="qa"><summary>🤔 课堂快问 3：交互实验 C 中，为什么加入与 y 无关的噪声特征反而让训练 \(R^2\) 上升？这些特征的真实系数是多少？</summary>
+<p style="font-size:14px;line-height:1.8">真实系数是 <b>0</b>。但 OLS 不知道这一点——它在噪声中"碰巧"找到了与训练集 y 相关的方向并赋予非零系数（方差项 \(\sigma^2/d_j^2\) 越大，这种假结构越夸张）。训练误差因此下降，但对新数据是纯损害 → 测试 MSE 上升。这正是需要"惩罚大系数"的根本原因。</p>
+</details>
+</section>
+
+<!-- ============ PAGE 2 ============ -->
+<section class="page" id="p1">
+<h2>② 岭回归（Ridge）：目标函数与矩阵求导</h2>
+<p>本页目标：建立 Ridge 目标函数，并在黑板上（此处为逐步点击展开）完成<b>矩阵求导 → 一阶条件 → 闭合解</b>的完整推导。</p>
+
+<h3>2.1 重要前提：必须先标准化</h3>
+<div class="warn note">
+<b>⚠️ 为什么正则化前必须标准化？</b> 惩罚项 \(\sum\beta_j^2\) 或 \(\sum|\beta_j|\) 默认所有系数"地位平等"。若某变量量纲大（如收入以"元"计）、其系数天然很小，几乎不受惩罚；量纲小的变量（如 0~1 变量）却会被过度压缩 → <b>惩罚强度被量纲绑架</b>。因此对每个特征做 Z-score 标准化：
+\[
+x_{ij}\leftarrow\frac{x_{ij}-\bar x_j}{s_j}\quad(\text{均值 }0,\text{方差 }1),\qquad y_i\leftarrow y_i-\bar y\ (\text{省略截距项})
+\]
+</div>
+
+<h3>2.2 Ridge 目标函数</h3>
+<div class="formula">
+\[
+\begin{aligned}
+RSS_{\text{Ridge}}(\boldsymbol\beta)
+&=\sum_{i=1}^{n}\Big(y_i-\sum_{j=1}^{p}x_{ij}\beta_j\Big)^{2}+\lambda\sum_{j=1}^{p}\beta_j^{2}\\
+&=(Y-X\boldsymbol\beta)^{T}(Y-X\boldsymbol\beta)+\lambda\,\boldsymbol\beta^{T}\boldsymbol\beta
+\end{aligned}
+\]
+</div>
+<p>其中 \(\lambda\ge 0\) 是<b>调节参数（超参数）</b>：</p>
+<ul style="line-height:2">
+<li>\(\lambda = 0\)：退化为经典 OLS；</li>
+<li>\(\lambda \to \infty\)：惩罚项主导，\(\widehat{\boldsymbol\beta}_{\text{Ridge}}\to \mathbf{0}\)（所有系数被压向 0，但<b>永不精确等于 0</b>）。</li>
+</ul>
+
+<h3>2.3 矩阵求导四步推导 <span class="badge">黑板重点</span></h3>
+<p>点击下方按钮，逐步展开完整推导（每步都注明所用向量求导法则）：</p>
+<div id="ridgeSteps">
+  <div class="stepbox" data-step="0"><span class="tag">第 1 步 · 展开目标函数</span>
+  <div class="formula">\[RSS_{\text{Ridge}}(\boldsymbol\beta)=Y^{T}Y-2\boldsymbol\beta^{T}X^{T}Y+\boldsymbol\beta^{T}X^{T}X\boldsymbol\beta+\lambda\boldsymbol\beta^{T}\boldsymbol\beta\]</div>
+  <p style="font-size:13.5px">展开 \((Y-X\beta)^T(Y-X\beta)=Y^TY-Y^TX\beta-\beta^TX^TY+\beta^TX^TX\beta\)，注意标量 \(Y^TX\beta=\beta^TX^TY\)，合并同类项。</p></div>
+  <div class="stepbox" data-step="1"><span class="tag">第 2 步 · 对 β 求梯度</span>
+  <p style="font-size:13.5px">利用向量求导法则（\(A\) 对称时）：\(\nabla_{\beta}(\beta^T A\beta)=2A\beta\)，\(\nabla_{\beta}(a^T\beta)=a\)。</p>
+  <div class="formula">\[\nabla_{\boldsymbol\beta}RSS_{\text{Ridge}}=-2X^{T}Y+2X^{T}X\boldsymbol\beta+2\lambda\boldsymbol\beta\]</div></div>
+  <div class="stepbox" data-step="2"><span class="tag">第 3 步 · 一阶条件（令梯度为零）</span>
+  <div class="formula">\[-2X^{T}Y+2\big(X^{T}X+\lambda I\big)\boldsymbol\beta=\mathbf{0}\;\Longrightarrow\;\big(X^{T}X+\lambda I\big)\boldsymbol\beta=X^{T}Y\]</div></div>
+  <div class="stepbox" data-step="3"><span class="tag">第 4 步 · 闭合解（Closed-form）</span>
+  <div class="formula green">\[\boxed{\;\widehat{\boldsymbol\beta}_{\text{Ridge}}=\big(X^{T}X+\lambda I\big)^{-1}X^{T}Y\;}\]</div>
+  <p style="font-size:13.5px">与 OLS 解相比，只多了一个 \(\lambda I\)——但这"一点点"让矩阵<b>永远可逆</b>（下一页证明），也实现了方差收缩。</p></div>
+</div>
+<button class="reveal" id="ridgeNext">▶ 展开下一步推导</button>
+<span id="ridgeDone" style="color:var(--ok);font-size:13px;margin-left:10px;display:none">✔ 推导完成</span>
+
+<div class="panel">
+<h4>🔍 几何视角：Ridge = 在系数空间加一个"弹簧势能"</h4>
+<div class="cols">
+<div>
+<p style="font-size:14px;line-height:1.9">把 \(\lambda\|\beta\|^2\) 想象成把系数<b>拴在原点的弹簧</b>：λ 越大，弹簧越紧，解被拉得越靠近原点。代价函数曲面（碗状）与弹簧的合力最低点，就是岭回归解。</p>
+<p style="font-size:14px;line-height:1.9">等价的<b>约束形式</b>（拉格朗日对偶）：</p>
+<div class="formula">
+\[\min_{\boldsymbol\beta}\ \sum_{i=1}^n\Big(y_i-\sum_j x_{ij}\beta_j\Big)^2\quad \text{s.t.}\quad \sum_j\beta_j^2\le s\]
+</div>
+<p style="font-size:13px;color:#64748b">λ 与 s 一一对应（λ 越大 ⇔ s 越小）。</p>
+</div>
+<div style="text-align:center">
+<svg viewBox="0 0 300 240" width="100%" style="max-width:340px">
+  <defs>
+    <radialGradient id="bowl" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stop-color="#dbeafe"/><stop offset="100%" stop-color="#ffffff"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="150" cy="140" rx="130" ry="80" fill="url(#bowl)" stroke="#94a3b8"/>
+  <ellipse cx="150" cy="140" rx="95" ry="58" fill="none" stroke="#cbd5e1"/>
+  <ellipse cx="150" cy="140" rx="60" ry="36" fill="none" stroke="#cbd5e1"/>
+  <circle cx="195" cy="118" r="6" fill="#dc2626"/>
+  <text x="205" y="112" font-size="11" fill="#dc2626">OLS 解</text>
+  <circle cx="150" cy="140" r="5" fill="#2563eb"/>
+  <text x="132" y="160" font-size="11" fill="#2563eb">Ridge 解</text>
+  <line x1="150" y1="140" x2="195" y2="118" stroke="#2563eb" stroke-dasharray="4 3"/>
+  <circle cx="150" cy="140" r="52" fill="none" stroke="#0e7490" stroke-dasharray="5 4"/>
+  <text x="88" y="98" font-size="11" fill="#0e7490">约束 ∑β²≤s</text>
+  <circle cx="150" cy="140" r="3" fill="#0f172a"/>
+  <text x="155" y="152" font-size="10" fill="#64748b">原点</text>
+</svg>
+<p style="font-size:12px;color:#64748b">Ridge 解 = 等高线与 L2 约束圆盘的切点</p>
+</div>
+</div>
+</div>
+
+<details class="qa"><summary>🤔 课堂快问：λ→∞ 时 Ridge 系数趋向什么？会不会精确等于 0？</summary>
+<p style="font-size:14px;line-height:1.8">趋向 \(\mathbf 0\)，但<b>不会精确等于 0</b>。闭合解 \(\hat\beta_{\text{Ridge}}=(X^TX+\lambda I)^{-1}X^TY\) 中只要 \(X^TY\neq\mathbf 0\)，对任意有限的 λ，解都是非零的。这与 Lasso 的"精确归零"形成关键对比（第 ④、⑥ 页）。</p>
+</details>
+</section>
+
+<!-- ============ PAGE 3 ============ -->
+<section class="page" id="p2">
+<h2>③ 数学本质：可逆性证明、SVD 收缩与正交特例</h2>
+
+<h3>3.1 为什么 \(X^{T}X+\lambda I\) 必定可逆？<span class="badge">黑板重点</span></h3>
+<p>点击下方展开两种证法：</p>
+<div id="invSteps">
+  <div class="stepbox" data-step="0"><span class="tag">证法 A · 特征值论证</span>
+    <p style="font-size:14px;line-height:2">① \(X^TX\) 是<b>半正定</b>矩阵，所有特征值 \(\mu_j\ge 0\)；<br>
+    ② 加入 \(\lambda I\)（\(\lambda&gt;0\)）后，特征值变为 \(\mu_j+\lambda&gt;0\)；<br>
+    ③ 所有特征值严格大于 0 ⇒ \(X^TX+\lambda I\) 是<b>严格正定矩阵</b>；<br>
+    ④ 行列式 \(\det=\prod_j(\mu_j+\lambda)&gt;0\)，故<b>永远可逆</b>——即使 \(p&gt;n\) 时也如此！</p>
+    <div class="formula green">\[\widehat{\boldsymbol\beta}_{\text{Ridge}}\ \text{在任意维度下都存在且唯一}\]</div>
+  </div>
+  <div class="stepbox" data-step="1"><span class="tag">证法 B · 二次型直接证明（与课后作业呼应）</span>
+    <p style="font-size:14px;line-height:2">任取非零向量 \(\mathbf v\neq\mathbf 0\)：</p>
+    <div class="formula">\[
+    \mathbf v^{T}\big(X^{T}X+\lambda I\big)\mathbf v
+    =\underbrace{\mathbf v^{T}X^{T}X\mathbf v}_{=\|X\mathbf v\|^{2}\ge 0}+\lambda\,\underbrace{\mathbf v^{T}\mathbf v}_{=\|\mathbf v\|^{2}>0}>0
+    \]</div>
+    <p style="font-size:14px">二次型恒正 ⇒ 严格正定 ⇒ 可逆。若进一步 \(X\) 列满秩，则 \(\|Xv\|^2&gt;0\) 也严格成立。</p>
+  </div>
+</div>
+<button class="reveal" id="invNext">▶ 展开证法</button>
+
+<h3>3.2 SVD 视角：岭回归是在"按主成分缩放"投影</h3>
+<p>对 \(X\) 做奇异值分解 \(X=UDV^{T}\)（\(D=\operatorname{diag}(d_1,\dots,d_p)\) 为奇异值，\(d_1\ge d_2\ge\cdots\)），则两种方法的拟合值为：</p>
+<div class="formula">
+\[
+\widehat Y_{\text{OLS}}=UU^{T}Y=\sum_{j=1}^{p}u_j u_j^{T}Y,
+\qquad
+\widehat Y_{\text{Ridge}}=\sum_{j=1}^{p}\underbrace{\frac{d_j^{2}}{d_j^{2}+\lambda}}_{\text{收缩因子 }&lt;1}\,u_j u_j^{T}Y
+\]
+</div>
+<div class="panel">
+<h4>📉 交互图：收缩因子 \(d_j^2/(d_j^2+\lambda)\) 随奇异值的变化</h4>
+<p style="font-size:14px">拖动 λ：变异巨大（d² 大）的主成分方向几乎不缩减（因子→1）；变异极小、方差巨大的方向被强力压向 0。</p>
+<div class="slidelabel">λ = <b id="svdLam">1.0</b></div>
+<input type="range" id="svdSlider" min="-10" max="60" value="25">
+<canvas id="svdChart" class="chart" height="230"></canvas>
+<div class="note"><b>解读：</b>岭回归的聪明之处——<span class="hl">信息丰富的方向（大 d）几乎原样保留，噪声主导的方向（小 d，正对应共线/高方差方向）被猛烈压缩</span>。这就是"以微小偏差换巨大方差下降"的精确数学表达。</div>
+</div>
+
+<h3>3.3 正交设计下的特例</h3>
+<div class="cols">
+<div>
+<p style="font-size:14px;line-height:1.9">若特征完全正交 \(X^{T}X=I\)，闭合解立即退化为一维缩放：</p>
+<div class="formula green">
+\[
+\big(I+\lambda I\big)^{-1}X^TY=\frac{1}{1+\lambda}\widehat{\boldsymbol\beta}_{\text{OLS}}
+\quad\Longrightarrow\quad
+\hat\beta_{j,\text{Ridge}}=\frac{1}{1+\lambda}\,\hat\beta_{j,\text{OLS}}
+\]
+</div>
+<p style="font-size:14px;line-height:1.9">所有系数按<b>同一比例</b> \(1/(1+\lambda)\) 整体缩减——但<b>永远不会缩减到精确 0</b>。记住这个结论，下一页看 Lasso 在同一场景下的截然不同表现。</p>
+</div>
+<div class="panel" style="margin:0">
+<h4>🎚️ 交互：正交设计下 Ridge 的等比收缩</h4>
+<div class="slidelabel">λ = <b id="orthLam">0.0</b>　→　缩放因子 1/(1+λ) = <b id="orthFac">1.000</b></div>
+<input type="range" id="orthSlider" min="0" max="100" value="0">
+<canvas id="orthChart" class="chart" height="220"></canvas>
+</div>
+</div>
+
+<details class="qa"><summary>🤔 课堂快问：收缩因子何时接近 1？何时接近 0？分别对应什么样的主成分方向？</summary>
+<p style="font-size:14px;line-height:1.8">当 \(d_j^2\gg\lambda\) 时因子 \(\to 1\)（数据在该方向变异大、信息丰富，保留）；当 \(d_j^2\ll\lambda\) 时因子 \(\to 0\)（该方向变异小、方差大、多为噪声或共线方向，压制）。</p>
+</details>
+</section>
+
+<!-- ============ PAGE 4 ============ -->
+<section class="page" id="p3">
+<h2>④ Lasso：为什么 L1 的"菱形尖角"能选出特征？</h2>
+
+<h3>4.1 Lasso 目标函数</h3>
+<div class="formula red">
+\[
+\begin{aligned}
+RSS_{\text{Lasso}}(\boldsymbol\beta)
+&=\sum_{i=1}^{n}\Big(y_i-\sum_{j=1}^{p}x_{ij}\beta_j\Big)^{2}+\lambda\sum_{j=1}^{p}\left|\beta_j\right|\\
+&=(Y-X\boldsymbol\beta)^{T}(Y-X\boldsymbol\beta)+\lambda\,\|\boldsymbol\beta\|_{1}
+\end{aligned}
+\]
+</div>
+<div class="warn note"><b>⚠️ 关键难点也是关键机遇：</b>\(L_1\) 范数 \(\|\beta\|_1=\sum_j|\beta_j|\) 在 \(\beta_j=0\) 处<b>不可微</b>——普通微分求导失效；但正是这一个个"尖角"赋予了 Lasso 生成<b>稀疏解</b>（不重要系数被精确压为 0）的能力。</div>
+
+<h3>4.2 约束等价形式</h3>
+<div class="formula">
+\[
+\min_{\boldsymbol\beta}\ \sum_{i=1}^n\Big(y_i-\sum_j x_{ij}\beta_j\Big)^2
+\quad\text{s.t.}\quad
+\begin{cases}
+\sum_j \beta_j^2\le s & (\text{Ridge})\\[4pt]
+\sum_j |\beta_j|\le s & (\text{Lasso})
+\end{cases}
+\]
+</div>
+<p>几何图景：RSS 的等高线是以 \(\widehat{\boldsymbol\beta}_{\text{OLS}}\) 为中心的<b>同心椭圆</b>，向外扩张；约束域是一朵以原点为中心的"边界墙"。解 = <span class="hl">椭圆与墙首次接触的切点</span>。切点落在哪，决定了是否出现 0 系数。</p>
+
+<div class="panel">
+<h4>🎯 核心交互：拖动约束半径 s，比较 L1 菱形 vs L2 圆形</h4>
+<div class="cols" style="grid-template-columns:1fr 260px;align-items:start">
+<div>
+  <div class="slidelabel">约束半径 s = <b id="sVal">1.10</b>　（s 越小 ⇔ λ 越大）</div>
+  <input type="range" id="sSlider" min="25" max="240" value="110">
+  <div style="margin:8px 0">
+    <label style="font-size:14px;margin-right:14px"><input type="radio" name="pen" value="l1" checked> <b style="color:var(--accent)">Lasso（菱形 |β₁|+|β₂|≤s）</b></label>
+    <label style="font-size:14px"><input type="radio" name="pen" value="l2"> <b style="color:var(--brand)">Ridge（圆形 β₁²+β₂²≤s²）</b></label>
+  </div>
+  <canvas id="geoCanvas" class="geo" width="560" height="440"></canvas>
+</div>
+<div>
+  <div class="note" style="margin-top:36px">
+  <b>图例</b><br>
+  <span class="legend-dot" style="background:#0f172a"></span> OLS 解 β̂<br>
+  <span class="legend-dot" style="background:#dc2626"></span> 正则化解（切点）<br>
+  <span class="legend-dot" style="background:#94a3b8"></span> RSS 等高线（椭圆）<br>
+  <span class="legend-dot" style="background:#f59e0b"></span> 约束域边界
+  </div>
+  <div class="note good" id="geoMsg"></div>
+</div>
+</div>
+</div>
+
+<h3>4.3 读图结论 <span class="badge">黑板图解重点</span></h3>
+<div class="cols">
+<div class="card">
+<h4>🔵 Ridge：L2 圆形约束</h4>
+<p style="font-size:14px;line-height:1.9">圆周<b>平滑无棱角</b>。椭圆扩张时切点几乎总落在圆周的"一般位置"——\(\hat\beta_1,\hat\beta_2\) <b>都不为 0</b>。系数被整体缩小，但一个都不淘汰。→ <b>不做特征选择</b>。</p>
+</div>
+<div class="card" style="border-color:#fca5a5">
+<h4>🔴 Lasso：L1 菱形约束</h4>
+<p style="font-size:14px;line-height:1.9">菱形的四个<b>尖角恰好落在坐标轴上</b> \((\pm s,0),(0,\pm s)\)。椭圆向外扩张时，<b>极大概率最先撞上某个尖角</b>——切点位于坐标轴 ⇒ 一个系数被精确压为 <b>0</b>！→ <b>自动完成特征选择</b>。</p>
+</div>
+</div>
+<div class="note"><b>直觉总结：</b>L1 约束域是"带尖刺的"，尖刺方向恰为坐标轴——高维时尖角/棱边极多，RSS 等高线极易先在棱上相切 ⇒ 大量系数被精确归零，产生<b>稀疏模型</b>。</div>
+
+<details class="qa"><summary>🤔 课堂快问：为什么 L1 在坐标轴上有"尖角"，而 L2 没有？这和 |x| 与 x² 的图像有什么关系？</summary>
+<p style="font-size:14px;line-height:1.8">\(|x|\) 在 0 处是一个"V"形尖点（左导数 −1，右导数 +1，不可微）；\(x^2\) 在 0 处平滑（导数为 0）。二维约束边界 \(|β₁|+|β₂|=s\) 在各坐标轴处正是由这样的 V 形尖点构成；而 \(β₁²+β₂²=s²\) 处处光滑。不可微的"尖"把最优解"钉"在轴上 ⇒ 出现精确的 0。</p>
+</details>
+</section>
+
+<!-- ============ PAGE 5 ============ -->
+<section class="page" id="p4">
+<h2>⑤ 软门限算子：Lasso 稀疏解的代数证明</h2>
+<p>本页在<b>正交设计</b>（\(X^TX=I\)）假设下，完整推导 Lasso 解的显式公式，揭示"平移 + 截断"的归零机制。</p>
+
+<h3>5.1 问题化简</h3>
+<p style="font-size:14px;line-height:1.9">正交设计下，各维解耦，逐分量求解同一问题：</p>
+<div class="formula red">
+\[
+Q(\beta)=\frac{1}{2}\big(\hat\beta_{\text{OLS}}-\beta\big)^{2}+\lambda\,|\beta|
+\qquad\text{（一维凸优化，β=0 处不可微 ⇒ 分类讨论）}
+\]
+</div>
+<p>点击下方按钮逐步展开<b>三段分类讨论</b>：</p>
+
+<div id="softSteps">
+  <div class="stepbox" data-step="0"><span class="tag">情形 ① β &gt; 0</span>
+    <p style="font-size:14px;line-height:2">此时 \(|\beta|=\beta\)，函数可微：</p>
+    <div class="formula">\[\frac{dQ}{d\beta}=-\big(\hat\beta_{\text{OLS}}-\beta\big)+\lambda=0\;\Longrightarrow\;\beta=\hat\beta_{\text{OLS}}-\lambda\]</div>
+    <p style="font-size:13.5px">此解合法当且仅当 \(\hat\beta_{\text{OLS}}-\lambda>0\)，即 <b>\(\hat\beta_{\text{OLS}}>\lambda\)</b>。直观：<span class="hl">OLS 估计先向 0 平移 λ</span>。</p>
+  </div>
+  <div class="stepbox" data-step="1"><span class="tag">情形 ② β &lt; 0</span>
+    <p style="font-size:14px;line-height:2">此时 \(|\beta|=-\beta\)：</p>
+    <div class="formula">\[\frac{dQ}{d\beta}=-\big(\hat\beta_{\text{OLS}}-\beta\big)-\lambda=0\;\Longrightarrow\;\beta=\hat\beta_{\text{OLS}}+\lambda\]</div>
+    <p style="font-size:13.5px">合法条件：\(\hat\beta_{\text{OLS}}+\lambda<0\)，即 <b>\(\hat\beta_{\text{OLS}}<-\lambda\)</b>。同样是向 0 平移 λ。</p>
+  </div>
+  <div class="stepbox" data-step="2"><span class="tag">情形 ③ |β̂_OLS| ≤ λ</span>
+    <p style="font-size:14px;line-height:2">①②均不合法 ⇒ 极值只能在不可微点 \(\beta=0\) 处取得。用<b>次梯度</b>验证：0 属于 \(Q\) 在 0 点的次微分集 \(\big[-\hat\beta_{\text{OLS}}-\lambda,\;-\hat\beta_{\text{OLS}}+\lambda\big]\)（当 \(|\hat\beta_{\text{OLS}}|\le\lambda\) 时该区间包含 0）。故最优解 <b>\(\beta=0\)</b>——<span class="hl">被"门限"截断归零</span>。</p>
+  </div>
+  <div class="stepbox" data-step="3"><span class="tag">合并：软门限算子（Soft-Thresholding Operator）</span>
+    <div class="formula green">
+    \[
+    \hat\beta_{j,\text{Lasso}}=S_{\lambda}\big(\hat\beta_{j,\text{OLS}}\big)
+    =\operatorname{sign}\big(\hat\beta_{j,\text{OLS}}\big)\max\Big(0,\;\big|\hat\beta_{j,\text{OLS}}\big|-\lambda\Big)
+    \]
+    \[
+    =\begin{cases}
+    \hat\beta_{j,\text{OLS}}-\lambda, & \hat\beta_{j,\text{OLS}}>\lambda\\
+    0, & \big|\hat\beta_{j,\text{OLS}}\big|\le\lambda\\
+    \hat\beta_{j,\text{OLS}}+\lambda, & \hat\beta_{j,\text{OLS}}<-\lambda
+    \end{cases}
+    \]
+    </div>
+    <p style="font-size:13.5px"><b>名字由来：</b>图像像被"削平"的门限——中间一段被压成 0，两段保留部分被向 0 平移 λ（"软"指过渡是连续的）。</p>
+  </div>
+</div>
+<button class="reveal" id="softNext">▶ 展开下一步推导</button>
+<span id="softDone" style="color:var(--ok);font-size:13px;margin-left:10px;display:none">✔ 推导完成</span>
+
+<div class="panel">
+<h4>🎚️ 交互：软门限算子 \(S_\lambda(\cdot)\) 工作实况</h4>
+<div class="cols" style="grid-template-columns:1fr 220px;align-items:start">
+<div>
+  <div class="slidelabel">门限 λ = <b id="stLam">0.60</b></div>
+  <input type="range" id="stSlider" min="0" max="150" value="60">
+  <div class="slidelabel">观测到的 OLS 系数 β̂ = <b id="stBeta">1.30</b></div>
+  <input type="range" id="stBetaSlider" min="-30" max="30" value="13">
+  <canvas id="stChart" class="chart" height="250"></canvas>
+</div>
+<div>
+  <div class="note" style="margin-top:44px;font-size:14px;line-height:2" id="stMsg"></div>
+</div>
+</div>
+</div>
+
+<h3>5.2 三种缩减机制对比</h3>
+<table class="mtx">
+<tr><th>方法</th><th>正交设计下的解</th><th>机制</th><th>会产生精确 0 吗？</th></tr>
+<tr><td><b>OLS</b></td><td>\(\hat\beta_{\text{OLS}}\)</td><td>恒等映射，不缩减</td><td>❌</td></tr>
+<tr><td><b>Ridge</b></td><td>\(\dfrac{1}{1+\lambda}\hat\beta_{\text{OLS}}\)</td><td>硬缩放：全体等比例缩小</td><td>❌（任意有限 λ 均非零）</td></tr>
+<tr><td><b>Lasso</b></td><td>\(S_\lambda(\hat\beta_{\text{OLS}})\)</td><td>平移 λ + 截断归零</td><td>✅（\(|β̂|≤λ\) 时精确为 0）</td></tr>
+</table>
+</section>
+
+<!-- ============ PAGE 6 ============ -->
+<section class="page" id="p5">
+<h2>⑥ 正交设计全景：OLS / Ridge / Lasso 系数对照实验</h2>
+<p>用一个 6 特征的数值实验，把上一页的三个公式"演"出来。设真实的 OLS 估计为：</p>
+<div class="formula">
+\[
+\hat\beta_{\text{OLS}}=(\,1.20,\;0.80,\;-0.50,\;0.30,\;-0.15,\;0.05\,)
+\]
+</div>
+<div class="panel">
+<h4>🎚️ 交互：拖动 λ，观察三个估计量如何加工这 6 个系数</h4>
+<div class="slidelabel">λ = <b id="cmpLam">0.40</b></div>
+<input type="range" id="cmpSlider" min="0" max="120" value="40">
+<canvas id="cmpChart" class="chart" height="260"></canvas>
+<div class="note" id="cmpMsg"></div>
+</div>
+
+<h3>6.1 观察要点</h3>
+<div class="cols">
+<div class="card"><h4>OLS（灰色）</h4><p style="font-size:14px;line-height:1.9">纹丝不动。但它把 <b>0.05</b> 这种"噪声级"小系数也照单全收——高维下这些噪声会被放大。</p></div>
+<div class="card"><h4>Ridge（蓝色）</h4><p style="font-size:14px;line-height:1.9">所有柱子按 <b>1/(1+λ)</b> 等比例变矮，"形状"不变。0.05 被缩小但<b>永远剩一口气</b>，6 个特征一个不少。</p></div>
+<div class="card" style="border-color:#fca5a5"><h4>Lasso（红色）</h4><p style="font-size:14px;line-height:1.9">大系数只是"矮一截"，但 <b>|β̂|≤λ 的柱子整根消失</b>。λ=0.4 时 X₅(−0.15)、X₆(0.05) 被精确归零 → <b>模型自动从 6 个特征筛到 4 个</b>。</p></div>
+</div>
+<div class="note good"><b>教学落点：</b>Ridge 是"全员减薪"，Lasso 是"末位淘汰"。稀疏性带来的不只是预测，更是<b>可解释性</b>——这正是 Lasso 名字里 "Selection Operator" 的含义。</div>
+
+<details class="qa"><summary>🤔 课堂快问：本例中 λ 超过多少时，Lasso 会把 X₄(0.30) 也淘汰掉？Ridge 在同样 λ 下会做什么？</summary>
+<p style="font-size:14px;line-height:1.8">λ ≥ 0.30 时 \(|0.30|-\lambda\le 0\)，X₄ 归零（X₅ 更早，λ≥0.15 时已被淘汰）；此时仅 X₁、X₂、X₃ 幸存。Ridge 则只是继续整体等比缩小，所有系数保持非零。</p>
+</details>
+</section>
+
+<!-- ============ PAGE 7 ============ -->
+<section class="page" id="p6">
+<h2>⑦ 弹性网、交叉验证与超参数选择</h2>
+
+<h3>7.1 弹性网（Elastic Net）</h3>
+<div class="formula">
+\[
+RSS_{\text{ElasticNet}}(\boldsymbol\beta)=RSS+\lambda_1\|\boldsymbol\beta\|_1+\lambda_2\|\boldsymbol\beta\|_2^2
+\]
+</div>
+<p style="font-size:14px;line-height:1.9"><b>动机：</b>当存在一组<b>强相关特征</b>时，Lasso 倾向于随机挑选其中一个、忽略其余，结果不稳定。加入 \(L_2\) 项后产生<b>组效应（Group Effect）</b>：相关特征被"打包"一起保留或一起压缩——兼具 Ridge 的稳定与 Lasso 的稀疏。（scikit-learn 中用 <code>l1_ratio</code> 参数混合两者。）</p>
+
+<h3>7.2 K 折交叉验证（K-Fold CV）选择 λ</h3>
+<div class="formula">
+\[
+\operatorname{MSE}_{\text{CV}}(\lambda)=\frac{1}{K}\sum_{k=1}^{K}\operatorname{MSE}_k(\lambda),
+\qquad K=5\ \text{或}\ 10,\quad \lambda\in[10^{-4},10^{5}]\ (\text{对数等间隔网格})
+\]
+</div>
+<div class="panel">
+<h4>📉 交互：CV 曲线、λ.min 与 1-SE 法则</h4>
+<p style="font-size:14px">下图是一条典型的 Lasso CV 曲线（横轴 log λ，越大越收缩）。拖动浏览，观察两个候选点的位置：</p>
+<div class="slidelabel">浏览位置 log λ = <b id="cvPos">-3.00</b></div>
+<input type="range" id="cvSlider" min="0" max="100" value="0">
+<canvas id="cvChart" class="chart" height="250"></canvas>
+<div class="note" id="cvMsg"></div>
+</div>
+<div class="cols">
+<div class="card">
+<h4>标准 ① lambda.min</h4>
+<p style="font-size:14px;line-height:1.9">使 CV-MSE <b>绝对最小</b> 的 λ。预测性能最好，但模型可能偏复杂（保留变量多），且对 CV 划分的随机性敏感。</p>
+</div>
+<div class="card" style="border-color:#6ee7b7">
+<h4>标准 ② lambda.1se（一倍标准差法则）⭐</h4>
+<p style="font-size:14px;line-height:1.9">在 \(\operatorname{CV\text{-}MSE}_{\min}+\operatorname{SE}\) 范围内的<b>最大 λ</b>（即最简单、最稀疏的模型）。性能与最优解<b>统计上无显著差异</b>，却更稳健、更可解释——<b>ISLR 推荐</b>。</p>
+</div>
+</div>
+</section>
+
+<!-- ============ PAGE 8 ============ -->
+<section class="page" id="p7">
+<h2>⑧ Python 实战：系数路径图与交叉验证</h2>
+
+<h3>8.1 基于 scikit-learn 的全流程代码</h3>
+<pre><code class="language-python">import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import RidgeCV, LassoCV, ElasticNetCV
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+# 1. 加载与预处理数据（Hitters 棒球薪资数据集）
+df = pd.read_csv('Hitters.csv').dropna()
+X = pd.get_dummies(df.drop(['Salary'], axis=1), drop_first=True)
+y = df['Salary']
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.3, random_state=42)
+
+# 2. 数据标准化 —— 正则化前的必须步骤！
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled  = scaler.transform(X_test)
+
+# 3. LassoCV 拟合与 10 折交叉验证
+alphas = np.logspace(-3, 3, 200)
+lasso_cv = LassoCV(alphas=alphas, cv=10, max_iter=10000, random_state=42)
+lasso_cv.fit(X_train_scaled, y_train)
+
+print(f"最佳超参数 alpha (λ): {lasso_cv.alpha_:.4f}")
+pred = lasso_cv.predict(X_test_scaled)
+print(f"测试集 RMSE: {np.sqrt(mean_squared_error(y_test, pred)):.2f}")
+
+# 4. 查看非零变量个数（特征选择结果）
+coefs = pd.Series(lasso_cv.coef_, index=X.columns)
+print("被保留的非零特征:")
+print(coefs[coefs != 0])</code></pre>
+
+<h3>8.2 真实数据上的 Lasso / Ridge 系数路径图</h3>
+<p style="font-size:14px;line-height:1.8">下面两图由本课件在后台对一组合成数据（n=120, p=12，真实模型仅 5 个非零系数）<b>真实求解</b>得到。拖动横轴浏览：</p>
+<div class="panel">
+<h4>🔴 Lasso 路径：随 λ 增大，系数依次"撞线"归零</h4>
+<div class="slidelabel">浏览位置：log₁₀(α) = <b id="lpPos">-3.0</b></div>
+<input type="range" id="lassoPathSlider" min="0" max="59" value="0">
+<canvas id="lassoPathChart" class="chart" height="260"></canvas>
+<div class="note" id="lpMsg"></div>
+</div>
+<div class="panel">
+<h4>🔵 Ridge 路径：所有系数同步平滑收缩，永不触零</h4>
+<div class="slidelabel">浏览位置：log₁₀(λ) = <b id="rpPos">-3.0</b></div>
+<input type="range" id="ridgePathSlider" min="0" max="59" value="0">
+<canvas id="ridgePathChart" class="chart" height="260"></canvas>
+<div class="note" id="rpMsg"></div>
+</div>
+<div class="note good"><b>讲解重点：</b>Lasso 图中，随着 λ 增大，越来越多的系数曲线从左向右依次<b>撞击 0 轴并被归零</b>——这正是第 ④ 页菱形尖角几何与第 ⑤ 页软门限公式在算法层面的直接呈现；而 Ridge 图中所有曲线平滑地一起衰减，无一触零。</div>
+</section>
+
+<!-- ============ PAGE 9 ============ -->
+<section class="page" id="p8">
+<h2>⑨ 模型选型矩阵 与 课后作业</h2>
+
+<h3>9.1 正则化与降维方法选型矩阵</h3>
+<table class="mtx">
+<tr><th>模型</th><th>惩罚类型 / 特征提取</th><th>优势场景</th><th>缺点 / 局限</th></tr>
+<tr><td><b>OLS</b></td><td>无惩罚</td><td>低维、无严重共线性，追求无偏性</td><td>高维或多重共线性下过拟合</td></tr>
+<tr><td><b>Ridge</b></td><td>\(L_2\) 范数 \(\sum\beta_j^2\)</td><td>强多重共线性、所有变量均有微弱贡献</td><td>不作特征选择，解释性较差</td></tr>
+<tr><td><b>Lasso</b></td><td>\(L_1\) 范数 \(\sum|\beta_j|\)</td><td>大量冗余特征，追求稀疏解与变量筛选</td><td>强相关特征组中表现不稳定</td></tr>
+<tr><td><b>Elastic Net</b></td><td>\(L_1+L_2\) 范数</td><td>强相关特征组的高维数据</td><td>需调优两个超参数 \(\alpha,\lambda\)</td></tr>
+<tr><td><b>PCR / PLS</b></td><td>投影至低维主成分</td><td>变量极多、维度极高（如光谱数据）</td><td>主成分的业务含义难解释</td></tr>
+</table>
+
+<h3>9.2 方法选择决策建议</h3>
+<div class="note">
+<b>🧭 快速决策：</b><br>
+① 变量数不多且无共线性 → <b>OLS</b>；<br>
+② 共线性强但认为所有变量都有贡献 → <b>Ridge</b>；<br>
+③ 想要稀疏可解释模型 / 做变量筛选 → <b>Lasso</b>；<br>
+④ 高维 + 存在强相关特征组 → <b>Elastic Net</b>（通常是最稳妥的起点）；<br>
+⑤ p ≫ n 且只关心预测、可牺牲可解释性 → <b>PCR / PLS</b>。<br>
+无论选哪个，超参数一律用 <b>K 折交叉验证 + 1-SE 法则</b> 确定。
+</div>
+
+<h3>9.3 课后作业 <span class="badge">对应教案四</span></h3>
+<details><summary><b>作业 1 · 推导题</b>：证明正交设计下 \(\widehat{\boldsymbol\beta}_{\text{Ridge}}=\frac{1}{1+\lambda}\widehat{\boldsymbol\beta}_{\text{OLS}}\)</summary>
+<p style="font-size:13.5px;line-height:1.9;color:#059669"><b>参考思路：</b>把 \(X^TX=I\) 直接代入闭合解：\((I+\lambda I)^{-1}X^TY=\frac{1}{1+\lambda}I\cdot X^TY=\frac{1}{1+\lambda}(X^TX)^{-1}X^TY\)。</p>
+</details>
+<details><summary><b>作业 2 · 证明题</b>：证明任意 \(\lambda&gt;0\) 时 \(X^TX+\lambda I\) 严格正定</summary>
+<p style="font-size:13.5px;line-height:1.9;color:#059669"><b>参考思路：</b>任意 \(\mathbf v\neq\mathbf0\)，\(\mathbf v^T(X^TX+\lambda I)\mathbf v=\|X\mathbf v\|^2+\lambda\|\mathbf v\|^2\ge\lambda\|\mathbf v\|^2&gt;0\)（本课件第 ③ 页证法 B）。</p>
+</details>
+<details><summary><b>作业 3 · 分析题</b>：为什么正则化前必须 Z-score 标准化？不做的后果？</summary>
+<p style="font-size:13.5px;line-height:1.9;color:#059669"><b>参考思路：</b>惩罚项对各系数一视同仁；量纲大的变量系数天然偏小，几乎不受罚，量纲小的变量被过度压缩 → 惩罚强度被量纲"绑架"，正则化失去公平性。另：未中心化时截距项也会被误罚。</p>
+</details>
+<details><summary><b>作业 4 · 实战题</b>：用 Hitters / Boston 房价数据对比 Ridge、Lasso、Elastic Net</summary>
+<p style="font-size:13.5px;line-height:1.9;color:#059669"><b>要求：</b>分别用 <code>RidgeCV</code>、<code>LassoCV</code>、<code>ElasticNetCV</code>（cv=10）建模；绘制各自系数随 λ 变化的路径图；报告三者测试集 RMSE 与各自选出的非零变量数；用 1-SE 法则讨论是否选更稀疏的模型。</p>
+</details>
+
+<div class="note" style="margin-top:30px">
+<b>📚 本课核心知识链回顾：</b><br>
+OLS 方差爆炸（VIF、秩亏）→ 偏差-方差权衡 → Ridge 目标函数与闭合解 \((X^TX+\lambda I)^{-1}X^TY\) → 严格正定的双重证明 → SVD 收缩因子 \(d_j^2/(d_j^2+\lambda)\) → L1 菱形尖角的几何稀疏性 → 软门限算子 \(S_\lambda\) → Elastic Net 组效应 → K 折 CV + 1-SE 法则 → Python 系数路径实战。
+</div>
+</section>
+
+<footer>正则化回归交互式课件 · 基于《回归数据分析方法与 Python 实战》第二次课教案生成 · 建议配合 ISLP 第 6 章使用</footer>
+<script>
+const DATA = {"alphas": [0.001, 0.0011374497075739474, 0.001293791837260057, 0.0014716231469530119, 0.0016738973181607557, 0.001903974015050766, 0.0021656746866478864, 0.0024633460390279384, 0.0028019322317457697, 0.0031870569976412437, 0.0036251170499885317, 0.004123388328430786, 0.0046901468483874255, 0.005334806161177142, 0.006068073707994633, 0.006902128664695654, 0.00785082423129583, 0.008929917726101903, 0.010157332306214009, 0.011553454661434532, 0.013141473626117561, 0.014947765333118162, 0.01700233130703923, 0.019339296773267144, 0.021997477459438485, 0.025021024303602802, 0.028460156777333625, 0.03237199700388683, 0.03682151852565575, 0.04188262547943582, 0.047639380104013404, 0.05418739896831418, 0.061635441110701746, 0.07010721446755891, 0.0797434305949489, 0.09070414181116795, 0.10317139957885878, 0.1173522782809678, 0.13348231461382332, 0.15182941972378697, 0.17269832906594343, 0.19643566389456668, 0.22343568845396908, 0.25414685849355073, 0.28907926987432636, 0.32881313098424275, 0.37400839968450095, 0.42541574485133565, 0.48388901457850425, 0.5503994181305651, 0.6260516572014821, 0.7121022744100103, 0.809980523790409, 0.9213121099259934, 1.0479461900196576, 1.1919860873910906, 1.3558242265352098, 1.5421818699941476, 1.7541543170506866, 1.9952623149688795], "lasso_path": [[2.509777705750985, -1.8519234250498307, -0.055197569820973826, 1.391841086941267, 0.8480017580066244, 0.055000088143360756, -0.09027314868060553, -2.1666909793641116, 0.05574509658643048, 0.11126140840176392, 0.693990610568968, 0.040400488760804494], [2.509619032410445, -1.8519016372104955, -0.05510378677919736, 1.3917166952001316, 0.8478527160453501, 0.05477623201173072, -0.09014294052668453, -2.166618755995929, 0.05559631821851173, 0.11118388203717187, 0.6938932933546403, 0.04021013539421112], [2.5094384911654806, -1.8518761856914896, -0.05499769214684055, 1.3915752194640052, 0.8476832063831164, 0.05452157857883183, -0.08999484292704961, -2.1665365851241334, 0.055427091506462155, 0.1110957668770131, 0.6937826044936317, 0.03999366896910844], [2.5092332013471093, -1.8518480019271448, -0.05487635194837818, 1.391414282318767, 0.8474903769837966, 0.05423195555537253, -0.08982638061388856, -2.1664431432811164, 0.05523460325797003, 0.1109954633821872, 0.6936566962412315, 0.03974739093984812], [2.508999627562194, -1.8518151762677693, -0.05473899818388308, 1.3912312400609856, 0.8472710639771563, 0.05390249139856062, -0.08963477196946813, -2.1663368344323755, 0.055015658933930366, 0.1108814503324818, 0.6935134871897585, 0.039467320576126154], [2.508734014819572, -1.8517785924243677, -0.05458211299400481, 1.3910230233432246, 0.8470215861092213, 0.05352777441707502, -0.08941681817445084, -2.1662159364758597, 0.05476661942518743, 0.11075169053182893, 0.6933505889409666, 0.039148697207617565], [2.5084318276992796, -1.8517362230857262, -0.054404319081722934, 1.3907862027221713, 0.8467378380247937, 0.05310152062624237, -0.08916891533086226, -2.1660783980154847, 0.05448335086621324, 0.11060417131290218, 0.6931653055535919, 0.03878633682168795], [2.5080881041867946, -1.8516880202164885, -0.054202095995368245, 1.390516831377178, 0.8464150891158987, 0.052616677958075585, -0.08888693842658549, -2.1659219546323736, 0.05416114714435405, 0.11043637661242271, 0.692954555086366, 0.03837417085910478], [2.5076972106891953, -1.8516340490721648, -0.05397133565078257, 1.3902104175585055, 0.8460479553145341, 0.052065230119568956, -0.08856619410098748, -2.1657440343241654, 0.05379465507831584, 0.11024543249433374, 0.6927148311659791, 0.037905287506231636], [2.5072525150154386, -1.8515718108127042, -0.05370959185138464, 1.3898619045400986, 0.8456303820020449, 0.051437949980061945, -0.08820137324412024, -2.16554163300587, 0.053377790306744506, 0.11002832840475982, 0.6924421630684633, 0.0373720209331426], [2.5067467688236618, -1.851501852878859, -0.053411148932871993, 1.3894654715025783, 0.845155390810402, 0.05072448573962008, -0.0877863983428718, -2.1653114371785924, 0.05290362609722539, 0.1097812995698509, 0.6921320111096386, 0.03676539342075851], [2.5061714350077073, -1.851421442160452, -0.05307240947678003, 1.3890145659100241, 0.8446151348253775, 0.04991292058689017, -0.08731439481139047, -2.1650495754440806, 0.052364289656584025, 0.10950040075952315, 0.6917792345803853, 0.036075448901276036], [2.505517093535269, -1.8513308029118576, -0.05268639743853544, 1.3885016666948804, 0.8440005985620389, 0.04898984094374965, -0.0867775051344554, -2.1647517460461576, 0.05175082010266245, 0.10918080974855827, 0.6913779633848787, 0.03529060894706363], [2.5047727410714162, -1.8512268798295368, -0.05224804248251926, 1.387918286445855, 0.8433016167632701, 0.047939849303473454, -0.0861668295447092, -2.1644129548804334, 0.0510530308180406, 0.1088173739481699, 0.6909215432272765, 0.03439795585451302], [2.50392614843178, -1.8511094854877135, -0.05174873230847293, 1.387254704195009, 0.84250653816544, 0.04674557105744797, -0.08547220750070715, -2.1640276217887884, 0.050259329142686035, 0.10840390236287228, 0.6904023826919623, 0.03338254592828103], [2.5029631209244476, -1.850975141194183, -0.05118149658944201, 1.3864999293393794, 0.841602198234361, 0.045387105126917675, -0.08468211914654727, -2.163589299919124, 0.04935653486391074, 0.10793368098961759, 0.6898118692615847, 0.03222763022287223], [2.501867795474194, -1.8508231333973126, -0.05053560042424743, 1.3856413945646193, 0.840573535382175, 0.04384195242970942, -0.08378342422997302, -2.1630907553258987, 0.04832965033735259, 0.10739874727605818, 0.6891401844466145, 0.030913910591454513], [2.500621847876574, -1.8506494291956512, -0.04980162085871645, 1.3846648707903364, 0.8394035048080232, 0.042084384929888946, -0.08276121311932715, -2.1625236614074876, 0.04716162227268094, 0.10679036772014117, 0.6883761822426496, 0.02941968174922628], [2.4992047141158977, -1.8504526407385884, -0.048966071251323136, 1.383554107991768, 0.8380726325017308, 0.04008527381424498, -0.08159849036381905, -2.1618786447570297, 0.045833047673171846, 0.10609828710112149, 0.6875071627463798, 0.02772001130803497], [2.4975927267056535, -1.8502280117560463, -0.04801636094255363, 1.382290687302136, 0.8365588535761749, 0.03781135190875762, -0.08027596073988201, -2.1611449465748227, 0.044321862303587554, 0.10531115974206307, 0.6865187021918611, 0.025786781994568433], [2.495759240141117, -1.8499732882970563, -0.04693543765828467, 1.3808535939075075, 0.8348369850950444, 0.03522491317528688, -0.07877164090044365, -2.160310425628835, 0.04260296354700043, 0.10441576355364443, 0.6853943726830631, 0.02358777140511367], [2.493673673296521, -1.849682771956007, -0.04570661779346637, 1.379218988356992, 0.8328784673932821, 0.03228293609985279, -0.07706056165017756, -2.1593611761706097, 0.04064780405974114, 0.10339737387577372, 0.6841155097556345, 0.021086566963879873], [2.491301513027643, -1.8493530944394578, -0.04430823051300056, 1.3773596910647699, 0.8306507312048093, 0.028936617763836096, -0.07511428627167292, -2.158281476168132, 0.03842390709166154, 0.10223892948501749, 0.6826608622245179, 0.018241514031364335], [2.4886032328617524, -1.8489773322542247, -0.042718302122993636, 1.3752448495979641, 0.8281168141402615, 0.025130316306869408, -0.07290050470152049, -2.1570533481882537, 0.035894337517362, 0.10092133463912087, 0.6810062790865098, 0.01500546810642689], [2.4855340747760164, -1.848549920518109, -0.040909839534463054, 1.37283932381337, 0.8252346109471903, 0.020800839779054937, -0.07038243951501766, -2.155656414341614, 0.033017079346845994, 0.09942263688228478, 0.6791242739878812, 0.011324628702892858], [2.4820431372496152, -1.8480646267444396, -0.03885205528114246, 1.3701031415839435, 0.8219562263910521, 0.01587631463678854, -0.06751825713145553, -2.1540674987743027, 0.029744341330136884, 0.09771785662990373, 0.6769835819181708, 0.007137793062478073], [2.4780722960259074, -1.8475117648847459, -0.036512177345174916, 1.366990889516395, 0.818227252186851, 0.010274878327125987, -0.06426040357915704, -2.152260160828834, 0.02602176798034554, 0.0957788416588785, 0.6745486582633791, 0.0023755439500726346], [2.4732256120553053, -1.8461792513055035, -0.03422036424365387, 1.3643086790027774, 0.8143906947062782, 0.004098517293389154, -0.06043454151320721, -2.1503822639628374, 0.021451967496287583, 0.09372285087849767, 0.6714303803965931, 0.0], [2.46783455662147, -1.844520759047694, -0.03140232017534897, 1.3622911649100529, 0.8101370711466466, 0.0, -0.05628999126092036, -2.1480550568262493, 0.016546498445097264, 0.09136339606858566, 0.6677853731165554, 0.0], [2.462405282788548, -1.8434522331716927, -0.02728215897507499, 1.3604554715640922, 0.8048762796360577, 0.0, -0.052107347641521334, -2.1448167765376125, 0.011966662997920003, 0.0884192303421998, 0.6639977214609596, 0.0], [2.456229821601974, -1.842237747720822, -0.02259489223059108, 1.358367459783399, 0.7988923889296291, 0.0, -0.04734977883899873, -2.1411334364840005, 0.006757308332705646, 0.08507030395767703, 0.6596894378518282, 0.0], [2.4492054868337254, -1.8408555138541953, -0.017264073271901863, 1.355992454021938, 0.792086018640541, 0.0, -0.041938303424015486, -2.136943785610475, 0.000831949341166623, 0.08126114593389551, 0.6547890002196359, 0.0], [2.440915590675562, -1.8387208254731224, -0.011313192928075328, 1.3530329612879264, 0.7843514357328448, 0.0, -0.03558287292973792, -2.1321942342488525, 0.0, 0.07677280794758357, 0.6498799482434623, 0.0], [2.4314381157650877, -1.8362016350354557, -0.004563277154465752, 1.3496253575114379, 0.7755549149870564, 0.0, -0.02832185515232925, -2.1267943710434345, 0.0, 0.07164271856810087, 0.6444026779619739, 0.0], [2.420530352561784, -1.8306411759061845, -0.0, 1.3456945711714345, 0.7656472395209784, 0.0, -0.0201290183671942, -2.1205171872937787, 0.0, 0.06611935949207462, 0.6382016162821418, 0.0], [2.4079107322976823, -1.8198229262392327, -0.0, 1.3411320543404004, 0.754540970670622, 0.0, -0.010920499330815335, -2.11315196832841, 0.0, 0.06035660531566965, 0.631196703148274, 0.0], [2.3935559982410535, -1.8075176110120839, -0.0, 1.335942980973476, 0.7419077678736871, 0.0, -0.0004463061338578245, -2.104774367935768, 0.0, 0.05380180958747148, 0.623229009262179, 0.0], [2.3786370319505483, -1.7930318621234442, -0.0, 1.332692888861697, 0.7256925375131856, 0.0, -0.0, -2.092898072048418, 0.0, 0.044191935253644815, 0.6137573134099962, 0.0], [2.36172968110427, -1.7765333779316121, -0.0, 1.3291136086878166, 0.7071667406356903, 0.0, -0.0, -2.079285470467936, 0.0, 0.03316584061687884, 0.6029656494531465, 0.0], [2.3424984131964153, -1.7577671807680884, -0.0, 1.3250423638995463, 0.6860945740708658, 0.0, -0.0, -2.0638018204655433, 0.0, 0.02062421316119704, 0.590690674976992, 0.0], [2.320623500444069, -1.7364215213472631, -0.0, 1.3204118294110792, 0.6621258404998123, 0.0, -0.0, -2.046189932429208, 0.0, 0.006358774014826955, 0.5767285341115503, 0.0], [2.294300762289448, -1.711841454169559, -0.0, 1.3154050145264036, 0.6342822451560116, 0.0, -0.0, -2.0259253439222014, 0.0, 0.0, 0.5597639048349126, 0.0], [2.263303452210053, -1.6836626023682577, -0.0, 1.3099009120641893, 0.6021860289962706, 0.0, -0.0, -2.0027053669544217, 0.0, 0.0, 0.5396733849792861, 0.0], [2.22804556295117, -1.6516105742674536, -0.0, 1.3036402803187304, 0.5656781920129954, 0.0, -0.0, -1.9762938106138366, 0.0, 0.0, 0.5168214297687505, 0.0], [2.187941487123947, -1.6151530042770363, -0.0, 1.2965191265706615, 0.5241523635121909, -0.0, -0.0, -1.9462519935776645, 0.0, 0.0, 0.4908284799970372, -0.0], [2.142325117801748, -1.573684351952581, -0.0, 1.288419172322331, 0.47691882202718416, -0.0, -0.0, -1.9120809375748806, 0.0, 0.0, 0.46126280688021715, -0.0], [2.0904387918556275, -1.5265158454926415, -0.0, 1.279205881731205, 0.42319304407738206, -0.0, -0.0, -1.8732130799170208, 0.0, 0.0, 0.4276333406392635, -0.0], [2.0314207055811266, -1.4728640416130845, -0.0, 1.2687262270425355, 0.3620826736591966, -0.0, -0.0, -1.829002846590062, 0.0, 0.0, 0.3893815140976224, -0.0], [1.9642906006066225, -1.4118378129794682, -0.0, 1.2568061468814318, 0.2925727006972967, -0.0, -0.0, -1.7787159296205368, 0.0, 0.0, 0.34587198518366397, -0.0], [1.8879334823339635, -1.3424235470658197, -0.0, 1.2432476551879272, 0.21350860227830976, -0.0, -0.0, -1.7215170906187551, 0.0, 0.0, 0.29638208424380175, -0.0], [1.8010808005629066, -1.2634682594582853, -0.0, 1.2278258533415436, 0.12357696736384734, -0.0, -0.0, -1.6564562755583074, 0.0, 0.0, 0.24008983813453866, -0.0], [1.7022905430007027, -1.1736606418002167, -0.0, 1.2102840287759091, 0.021284454816711686, -0.0, -0.0, -1.582452882857568, 0.0, 0.0, 0.1760602120162606, -0.0], [1.6197703410648778, -1.074994381948428, -0.0, 1.1502763464001466, 0.0, -0.0, -0.0, -1.496752421938914, 0.0, 0.0, 0.10077710564248495, -0.0], [1.5335092043550362, -0.9636541026913408, -0.0, 1.0718201365416464, 0.0, -0.0, -0.0, -1.3988840341913726, 0.0, 0.0, 0.01452175782676714, -0.0], [1.421255611386476, -0.8339219995335859, -0.0, 0.975678076366297, 0.0, -0.0, -0.0, -1.2903559768878103, 0.0, 0.0, 0.0, -0.0], [1.2907794648062965, -0.6857480182766418, -0.0, 0.8649574519094565, 0.0, -0.0, -0.0, -1.1674625422055176, 0.0, 0.0, 0.0, -0.0], [1.1423694098430677, -0.5172075665456439, -0.0, 0.7390183100981188, 0.0, -0.0, -0.0, -1.0276774408597478, 0.0, 0.0, 0.0, -0.0], [0.9735604362241085, -0.3255012790098398, -0.0, 0.5957688700726999, 0.0, -0.0, -0.0, -0.8686789182108079, 0.0, 0.0, 0.0, -0.0], [0.7815487185453659, -0.10744501831215178, -0.0, 0.4328298364056551, 0.0, -0.0, -0.0, -0.6878260951190811, 0.0, 0.0, 0.0, -0.0], [0.5676716320228614, -0.0, -0.0, 0.24295962766276682, 0.0, -0.0, -0.0, -0.48580483892762916, 0.0, 0.0, 0.0, -0.0]], "ridge_lams": [0.001, 0.0012638482029342984, 0.0015973122800602539, 0.002018760254679039, 0.002551406520031287, 0.0032245905452963947, 0.004075392965871778, 0.005150678076168122, 0.00650967523045817, 0.008227241341700473, 0.0103979841848149, 0.013141473626117567, 0.016608827826277157, 0.020991037201085545, 0.026529484644318972, 0.03352924149249558, 0.04237587160604064, 0.05355666917706899, 0.06768750009458534, 0.08554672535565684, 0.10811807510766078, 0.13664483492953258, 0.1726983290659436, 0.21826447283974873, 0.2758531617629184, 0.34863652276780877, 0.44062364277735727, 0.5568813990945273, 0.7038135554931562, 0.8895134973108236, 1.1242100350620874, 1.4208308325339223, 1.795714494371641, 2.269510536694671, 2.868316813342012, 3.6251170499885355, 4.581597669054491, 5.790443980602489, 7.318242219076182, 9.249147277217334, 11.689518164985776, 14.773776525985127, 18.671810912919206, 23.598334667821938, 29.82471286216894, 37.69390975388363, 47.639380104013405, 60.20894493336138, 76.09496685459884, 96.17248711152963, 121.54742500762885, 153.61749466718297, 194.14919457438816, 245.37511066398218, 310.11689265747816, 391.94067748472213, 495.353520895918, 626.0516572014828, 791.2342618981327, 1000.0], "ridge_path": [[2.510905255855925, -1.852017883233223, -0.055935614415994483, 1.3927427109262738, 0.8490763657034259, 0.056623305141763475, -0.09122073676380313, -2.1671987984003716, 0.056828110571132906, 0.11183508954450211, 0.6946973097862861, 0.04178605698991822], [2.510898054586486, -1.8519996698142909, -0.05595145567141879, 1.3927418473418585, 0.8490738338416136, 0.05662181865611193, -0.09122082380146748, -2.1671941056880297, 0.05682826954486203, 0.11183776654133121, 0.6946969701360532, 0.04178633468512985], [2.5108889533904746, -1.851976651681169, -0.05597147576358452, 1.392740755884021, 0.849070633959149, 0.05661994001955051, -0.09122093379061309, -2.1671881748683237, 0.05682847046582032, 0.11184114974139286, 0.6946965408632398, 0.04178668559917781], [2.5108774510446166, -1.85194756163444, -0.055996776763412304, 1.3927393764178844, 0.8490665898038912, 0.05661756579700569, -0.09122107277903393, -2.1671806793025064, 0.056828724403080066, 0.11184542540492765, 0.6946959983172203, 0.041787129020534], [2.5108629141199468, -1.8519107984343857, -0.05602875121812534, 1.3927376329355894, 0.8490614786222231, 0.05661456528209427, -0.09122124840549886, -2.167171206188884, 0.05682904534708669, 0.1118508288946759, 0.694695312604883, 0.04178768930887705], [2.5108445421241594, -1.85186433884893, -0.05606915861193362, 1.3927354293643583, 0.8490550188911237, 0.056610773313488516, -0.09122147031670569, -2.1671592338408794, 0.05682945098094583, 0.111857657606457, 0.6946944459421849, 0.04178839722235703], [2.5108213234614993, -1.8518056266053127, -0.05612022189273291, 1.392732644266203, 0.8490468548141961, 0.05660598120296165, -0.09122175069256624, -2.167144102977116, 0.05682996365550447, 0.11186628729651032, 0.6946933505699346, 0.04178929158864614], [2.5107919797961884, -1.8517314322170435, -0.05618474929479389, 1.3927291241354567, 0.8490365367283521, 0.056599925281108576, -0.09122210490739771, -2.167124980447887, 0.05683061162217051, 0.1118771926929325, 0.6946919661183535, 0.04179042140663694], [2.510754895773646, -1.8516376761060527, -0.056266288028962164, 1.3927246749219724, 0.8490234963429768, 0.05659227243889653, -0.09122255236127967, -2.1671008134091734, 0.056831430591746085, 0.11189097350733357, 0.6946902162741748, 0.041791848486316785], [2.5107080302585043, -1.8515192055021654, -0.05636931808457746, 1.3927190513082892, 0.8490070154494336, 0.05658260188314462, -0.09122311752391729, -2.1670702714347265, 0.05683246570574049, 0.11190838724885838, 0.6946880045650082, 0.041793650759072376], [2.5106488042482495, -1.851369513189839, -0.056499496465016286, 1.3927119431425523, 0.8489861863801453, 0.05657038212411622, -0.09122383124300315, -2.1670316734010613, 0.0568337740296847, 0.11193039059918886, 0.6946852090260713, 0.04179592641977842], [2.5105739593651824, -1.8511803831822768, -0.056663964746791806, 1.3927029582677475, 0.848959862043737, 0.05655494196454042, -0.09122473238036698, -2.1669828951554533, 0.056835427707297326, 0.11195819154961562, 0.6946816754511917, 0.04179879909538228], [2.510479379254426, -1.8509414447178, -0.056871736005778994, 1.3926916007821262, 0.8489265927912738, 0.05653543395088345, -0.09122586985204517, -2.166921252940786, 0.0568375179516202, 0.11199331504779536, 0.6946772088494774, 0.04180242427139755], [2.5103598642451366, -1.8506396114642385, -0.05713418099378709, 1.3926772435025248, 0.8488845466477017, 0.05651078836737916, -0.09122730516235393, -2.16684335625124, 0.05684016009676471, 0.11203768557225063, 0.6946715626260818, 0.0418069972454474], [2.5102088471735255, -1.8502583773536423, -0.057465638069826186, 1.392659093064661, 0.8488314085334752, 0.056479655387883104, -0.0912291155360754, -2.1667449221654898, 0.05684349999452093, 0.11209373086792596, 0.6946644248736408, 0.04181276291100078], [2.5100180352094914, -1.8497769339372137, -0.05788417686428726, 1.3926361456597869, 0.848764252955796, 0.056440332436436175, -0.09123139776487318, -2.1666205411721564, 0.05684772211765385, 0.1121645120555983, 0.6946554009914192, 0.041820027695743583], [2.509776958745533, -1.8491690664825777, -0.05841255199380746, 1.3926071308449617, 0.8486793832066624, 0.05639067313246002, -0.09123427289021105, -2.1664633819732755, 0.05685305983115008, 0.11225388648551704, 0.6946439916304046, 0.041829173971866085], [2.509472403752016, -1.8484017772702988, -0.05907939024633235, 1.3925704401336876, 0.8485721282914847, 0.056327973403374365, -0.09123789183861769, -2.166264819617266, 0.05685980842058466, 0.11236671104207535, 0.694629564678892, 0.041840677192920284], [2.509087698320216, -1.8474335749196344, -0.05992066220461689, 1.3925240361186342, 0.8484365865357654, 0.05624882943916468, -0.091242442094777, -2.1660139674493895, 0.05686834163175722, 0.11250909509669893, 0.694611319633152, 0.04185512584913392], [2.5086018172471616, -1.8462123586691468, -0.06098149659244756, 1.3924653366211333, 0.8482653019669073, 0.05614896116250079, -0.09124815542481807, -2.1656970886385554, 0.0568791326892297, 0.11268871387951623, 0.6945882422123186, 0.04187324399743922], [2.5079882603297357, -1.8446728175247413, -0.06231840142997669, 1.3923910666949415, 0.8480488560107939, 0.05602299385121884, -0.09125531651606335, -2.165296857303436, 0.05689278103847442, 0.11291519454726956, 0.6945590464347962, 0.04189591549830901], [2.5072136504568405, -1.84273325817805, -0.06400195813103815, 1.3922970690821412, 0.8477753526245053, 0.055864189591202845, -0.09126427213229116, -2.1647914323872035, 0.05691004641667127, 0.11320058838790309, 0.6945221005181497, 0.04192420799778318], [2.506235986670966, -1.840291776172835, -0.06612004924040771, 1.3921780607110417, 0.8474297695376388, 0.05566411956188275, -0.0912754399206547, -2.1641532993248003, 0.056931892326145234, 0.11355994294206528, 0.694475331814435, 0.04195939285278655], [2.5050024753963296, -1.8372216977419638, -0.06878166165377009, 1.392027318731695, 0.8469931416253627, 0.05541226810854799, -0.0912893152341636, -2.1633478251963374, 0.056959541593395974, 0.1140119865527815, 0.6944161044328537, 0.04200295419671213], [2.5034468506655116, -1.8333662540047668, -0.07212126578601441, 1.3918362739648997, 0.8464415344519546, 0.05509556068572602, -0.09130647308363099, -2.162331462601159, 0.05699454748212088, 0.11457993374412967, 0.6943410610661738, 0.04205657557957532], [2.501486082691118, -1.8285325180457215, -0.0763036938903966, 1.3915939818699288, 0.8457447566779693, 0.05469781090077219, -0.0913275603633177, -2.1610495263048954, 0.057038884827188885, 0.11529241102606047, 0.6942459175900865, 0.04212208525699718], [2.499016365698909, -1.8224847573486325, -0.08152930896580668, 1.391286430332166, 0.8448647495413221, 0.05419908825386424, -0.09135327047296832, -2.159433455579759, 0.05709506689183294, 0.1161844865776871, 0.6941251949084386, 0.042201330150304944], [2.495908274012126, -1.8149375533005117, -0.08803904532184248, 1.3908956285087775, 0.8437535807390276, 0.05357501939178175, -0.09138428795830211, -2.157397465411774, 0.05716629510320312, 0.11729876022258434, 0.6939718667960355, 0.042295932458891156], [2.49200098506363, -1.8055493440017685, -0.09611858517975291, 1.390398399992297, 0.8423509604673175, 0.05279605377698929, -0.09142118431979122, -2.1548344834784277, 0.05725665036899136, 0.11868642783594696, 0.6937768944835193, 0.04240686061731855], [2.487095496378098, -1.7939174820163954, -0.10610048768294045, 1.389764774518341, 0.8405811926067535, 0.05182675172400794, -0.09146423724320307, -2.1516112700210486, 0.057371335978286114, 0.12040817231907197, 0.6935286075423692, 0.04253371714625018], [2.4809468196020505, -1.779576473758099, -0.11836249967997414, 1.388955832791862, 0.8383494805730185, 0.05062519024548451, -0.09151313401958865, -2.147562628448387, 0.057516982381421555, 0.1225346485005806, 0.6932118751051137, 0.042673611253998545], [2.473255228605256, -1.7620017467962912, -0.13331958857067927, 1.3879208060891897, 0.8355375365493956, 0.04914262950105286, -0.09156650644894007, -2.1424846405530498, 0.05770202192419699, 0.12514622335956416, 0.6928069901966918, 0.0428194492737462], [2.4636567803668292, -1.7406219535078313, -0.1514065711444229, 1.3865931642875184, 0.8319985131465973, 0.04732363492551475, -0.09162123122920368, -2.1361269068892508, 0.05793713419159999, 0.1283315171821949, 0.6922881614626178, 0.042957454258181926], [2.4517135235854686, -1.714843201367216, -0.17304783573080962, 1.3848853438453208, 0.8275514155518645, 0.04510689515626291, -0.09167142157727726, -2.128183845459629, 0.05823574562378492, 0.13218419351612898, 0.6916214696707692, 0.043063742297783286], [2.436904061795025, -1.6840882565777404, -0.19861101960628758, 1.3826816785025324, 0.8219753961774865, 0.042426992106202294, -0.09170704134836062, -2.1182852061067585, 0.05861453419460441, 0.13679741598626657, 0.6907621010323554, 0.04309987761435233], [2.418615440453613, -1.6478520982629454, -0.22834321946022407, 1.3798290205307806, 0.8150047208086649, 0.03921733767798698, -0.09171210536386024, -2.105986103039275, 0.059093833562996356, 0.1422554981066778, 0.6896506185122564, 0.04300755470999501], [2.3961376766870996, -1.605771634283653, -0.2622919654793272, 1.3761245224868084, 0.806325745789976, 0.0354143651919078, -0.09166250510581112, -2.090757074515808, 0.059697744807350545, 0.14862258822406443, 0.6882079846928469, 0.04270296623669412], [2.368662656852842, -1.5577018075297064, -0.30021892195257405, 1.3713001676879266, 0.7955779248319812, 0.03096285179341496, -0.09152363126781551, -2.0719749938664047, 0.06045364804452169, 0.15592877958605122, 0.686329025311077, 0.04207202716889205], [2.335289631361354, -1.503783663522546, -0.34152118432573497, 1.3650040198644733, 0.7823615261602074, 0.025822006537341416, -0.09124815606209258, -2.0489161685640136, 0.06139067712935531, 0.16415472820449883, 0.6838740602599385, 0.040968368862282556], [2.2950401959076494, -1.4444846700953824, -0.38518072006023285, 1.3567789879933756, 0.7662550793197882, 0.01997181550900566, -0.09077456733724752, -2.0207538022998905, 0.06253662037817379, 0.17321646051453976, 0.6806585973109951, 0.03921668108421156], [2.2468864570453926, -1.3805912959878932, -0.42976339007241937, 1.3460413730599003, 0.7468451196522403, 0.01341925129326696, -0.09002725962592809, -1.9865632736634258, 0.06391271242958343, 0.18295223217115908, 0.6764413911464924, 0.03662421095076185], [2.1897968038830773, -1.3131416623399517, -0.4734820491385181, 1.3320637085413638, 0.7237690509138465, 0.006204399133688948, -0.08891909697189478, -1.9453403721007942, 0.06552598459255116, 0.1931128647195496, 0.670911960475479, 0.033002606238840604], [2.122803722128982, -1.2433019516621266, -0.5143235037861185, 1.3139692876206164, 0.6967686339223923, -0.001592865895879994, -0.08735725580951702, -1.896039350257091, 0.06735933857860754, 0.20335617793738986, 0.6636799664898994, 0.028200501350560736], [2.0450964158725227, -1.172209384551473, -0.550221339628683, 1.2907486055975423, 0.6657470857987642, -0.009844825558729536, -0.08525271076303238, -1.83763850770168, 0.06936034745179531, 0.21324573448277503, 0.6542707001043035, 0.022144254223603], [1.9561367438732713, -1.1008187975854151, -0.5792437151007892, 1.2613092952096203, 0.6308183263923246, -0.01836652780887589, -0.08253285190507326, -1.769239613902095, 0.07143090057723658, 0.22225505654304772, 0.6421329822210864, 0.014880419216219354], [1.8557900219287504, -1.029792187293517, -0.5997635582761649, 1.2245689461427758, 0.5923346835991242, -0.026907308803634553, -0.079155466090091, -1.690202248865488, 0.07342094229458135, 0.2297809872715284, 0.626667154806587, 0.00660973673997392], [1.7444538295751202, -0.9594596236336077, -0.6105885461911763, 1.1795926424894079, 0.5508816292403886, -0.03514839941671104, -0.07512102238910921, -1.6003041520477952, 0.07513021967787917, 0.23517268162259342, 0.6072800030063078, -0.0022999192733654528], [1.6231605555883841, -0.8898604474560516, -0.611043558661579, 1.1257639344292851, 0.5072357977790705, -0.042713715275425855, -0.07047957508173089, -1.4999047868574695, 0.07632149940457181, 0.2377831483019484, 0.583468700684954, -0.011333093721160536], [1.4936259215169136, -0.8208529876008751, -0.6010103385357132, 1.062962035182465, 0.4622937708274741, -0.0491997425071239, -0.06532940361639152, -1.3900753668500223, 0.07674659799704436, 0.23704563876362636, 0.5549265221598967, -0.01988396567518269], [1.3582185560714342, -0.7522648184449134, -0.5809323663174226, 0.99170501018529, 0.41698904232005324, -0.05422498093409424, -0.05980691224796944, -1.2726513819614889, 0.07618283449613114, 0.23256700537192643, 0.521650938256319, -0.02734502632688446], [1.2198362214528946, -0.684046398781567, -0.5517881073003278, 0.9132153989410504, 0.37221762958707755, -0.0574909062488617, -0.054070364918210566, -1.1501706540579726, 0.07447315701403806, 0.22421783855642635, 0.48402480144212595, -0.03320810800232829], [1.0816922382471386, -0.6163897614160738, -0.5150285589298067, 0.8293758031503229, 0.3287865734565041, -0.058838678724020634, -0.0482820432974383, -1.0256842953655594, 0.07156004801000138, 0.2121914974807407, 0.4428401567172029, -0.037150521359743255], [0.9470379622328231, -0.5497816430793269, -0.4724724734135083, 0.7425670965330737, 0.28738747250902297, -0.05828355812638719, -0.04259319807823416, -0.9024639620039528, 0.06750325789291937, 0.1970075797837071, 0.39924593047642093, -0.03908128796847413], [0.8188671593412737, -0.48497705166379085, -0.42615879196803436, 0.6554141527740618, 0.24858669141445697, -0.05601468983478901, -0.03713405198863671, -0.7836623561303191, 0.06247524147146625, 0.17945120477956758, 0.3546231034865397, -0.03913552093526115], [0.6996571660058679, -0.4229015101923413, -0.3781690166277533, 0.570491510224228, 0.2128210587012318, -0.052359646624320896, -0.032008681366674736, -0.6719995264883962, 0.05673479337560454, 0.160461320800562, 0.31041486874309016, -0.03762298543417643], [0.5911940162513949, -0.36451080535740066, -0.3304456472445085, 0.49005252649124387, 0.18039284587082893, -0.04772513075664687, -0.027293302640047014, -0.5695377818693124, 0.050586091323588364, 0.1409982349789075, 0.26795343117209863, -0.03495096036340054], [0.4945060124539933, -0.31064764983405296, -0.2846385046740298, 0.4158353646988833, 0.15146530045197612, -0.042531710592323496, -0.023036588420611487, -0.47757832541625317, 0.04433421475274096, 0.12192449080080295, 0.22832309730123776, -0.0315457290800782], [0.4099017756550031, -0.2619309695061777, -0.24200484454645924, 0.3489727240325261, 0.12606418599383745, -0.03715912356446393, -0.01926137445295152, -0.396677226072668, 0.03824774105316129, 0.10392375561023914, 0.19228347975249227, -0.027791448864224563], [0.3370859691458136, -0.21869832961702726, -0.20337425575715687, 0.2900017879735684, 0.1040897052851757, -0.03191171448274685, -0.01596763403724522, -0.32675122885455876, 0.032535024053074166, 0.0874662318409343, 0.16025586692854202, -0.02399468175325293], [0.2753156210951815, -0.18100322157547324, -0.1691725278016366, 0.23894836494621577, 0.08533899211745485, -0.027005381706897747, -0.013136599407763308, -0.26723230354693206, 0.02733554921833399, 0.07281459580785186, 0.13235932458887173, -0.02037321898433286]], "cv": {"loga": [-3.0, -2.9153846153846152, -2.830769230769231, -2.746153846153846, -2.6615384615384614, -2.576923076923077, -2.4923076923076923, -2.407692307692308, -2.3230769230769233, -2.2384615384615385, -2.153846153846154, -2.0692307692307694, -1.9846153846153847, -1.9000000000000001, -1.8153846153846156, -1.7307692307692308, -1.6461538461538463, -1.5615384615384618, -1.476923076923077, -1.3923076923076925, -1.307692307692308, -1.2230769230769232, -1.1384615384615386, -1.053846153846154, -0.9692307692307693, -0.884615384615385, -0.8000000000000003, -0.7153846153846155, -0.6307692307692312, -0.5461538461538464, -0.4615384615384617, -0.37692307692307736, -0.2923076923076926, -0.20769230769230784, -0.12307692307692353, -0.03846153846153877, 0.04615384615384599, 0.1307692307692303, 0.21538461538461506, 0.3], "mse": [0.9741601685295512, 1.0023724916505723, 1.0488662855965052, 1.0710986419301194, 1.125399590848759, 1.168631336450932, 1.2023437514518935, 1.2351441364723117, 1.2813747126008972, 1.334425635804529, 1.3516000468656537, 1.3827912260571942, 1.3879939777795973, 1.4046108701901208, 1.4019400379833824, 1.4011529505227176, 1.3786559876404085, 1.3630841145431751, 1.3429135027945263, 1.2989770423957843, 1.2546179758787044, 1.2166551932841674, 1.1706174248739494, 1.141766780288655, 1.094507955323074, 1.0524918067319848, 1.0267363095310038, 0.9991749609649174, 0.9746636625375025, 0.9455313809977384, 0.924672521474193, 0.9251469506479048, 0.8941755275228446, 0.8798136255122907, 0.8859982996265132, 0.8733008941528599, 0.8645546611514235, 0.8618206469035461, 0.8580702929468877, 0.8716994364208847], "se": [0.06712099770291469, 0.06214721553458918, 0.06410356269141061, 0.05483081780345821, 0.0578913691186289, 0.09456268572604226, 0.05046085872154193, 0.06774324891897678, 0.09664511104760891, 0.07612354010804656, 0.050965744520397295, 0.07673524093069375, 0.06359478206852598, 0.09208505433707788, 0.05021598242686507, 0.07333529416721656, 0.10163572981293949, 0.06386720195513719, 0.11752816469466167, 0.1314131577975973, 0.06217907510845749, 0.0859971043039438, 0.05656211182848891, 0.13979026505944198, 0.08326892725648327, 0.07495774345775624, 0.05821615784258796, 0.06972053165649425, 0.05705624263623033, 0.05823721321012866, 0.07809851820482178, 0.07079630548135595, 0.09134703328294755, 0.05316725274463368, 0.051411473946458966, 0.09217938488196442, 0.06039356402697454, 0.08431825908706175, 0.0888826683166817, 0.0577098365042029]}, "feature_names": ["X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10", "X11", "X12"]};
+
+/* ---------- 通用工具 ---------- */
+const C = {ink:'#1a2332', grid:'#e2e8f0', blue:'#2563eb', red:'#dc2626', teal:'#0e7490', orange:'#f59e0b', green:'#059669', gray:'#94a3b8'};
+const PALETTE = ['#2563eb','#dc2626','#0e7490','#d97706','#7c3aed','#059669','#db2777','#0891b2','#65a30d','#e11d48','#4f46e5','#ca8a04'];
+function fit(cv, hCss){
+  const dpr = window.devicePixelRatio||1, w = cv.clientWidth||600;
+  cv.width = w*dpr; cv.height = hCss*dpr; cv.style.height = hCss+'px';
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  return [ctx, w, hCss];
+}
+function axes(ctx, W, H, pad, xmin,xmax,ymin,ymax, xticks, yticks){
+  const X = x=>pad.l + (x-xmin)/(xmax-xmin)*(W-pad.l-pad.r);
+  const Y = y=>H-pad.b - (y-ymin)/(ymax-ymin)*(H-pad.t-pad.b);
+  ctx.strokeStyle=C.grid; ctx.lineWidth=1; ctx.font='11px sans-serif'; ctx.fillStyle='#64748b';
+  xticks.forEach(t=>{ctx.beginPath();ctx.moveTo(X(t),pad.t);ctx.lineTo(X(t),H-pad.b);ctx.stroke();ctx.textAlign='center';ctx.fillText(t,X(t),H-pad.b+15);});
+  yticks.forEach(t=>{ctx.beginPath();ctx.moveTo(pad.l,Y(t));ctx.lineTo(W-pad.r,Y(t));ctx.stroke();ctx.textAlign='right';ctx.fillText(t,pad.l-6,Y(t)+4);});
+  ctx.strokeStyle='#94a3b8'; ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,H-pad.b);ctx.lineTo(W-pad.r,H-pad.b);ctx.stroke();
+  return [X,Y];
+}
+function line(ctx, pts, color, width=2, dash=[]){
+  ctx.strokeStyle=color; ctx.lineWidth=width; ctx.setLineDash(dash); ctx.beginPath();
+  pts.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.stroke(); ctx.setLineDash([]);
+}
+function dot(ctx,x,y,color,r=4){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();}
+
+/* ---------- 导航 ---------- */
+const TITLES = ["① OLS 的危机","② Ridge 目标函数","③ 闭合解与 SVD","④ Lasso 几何图解","⑤ 软门限推导","⑥ 三种机制对比","⑦ Elastic Net 与 CV","⑧ Python 实战","⑨ 选型矩阵与作业"];
+let CUR = 0;
+const nav = document.getElementById('nav');
+TITLES.forEach((t,i)=>{const b=document.createElement('button'); b.textContent=t;
+  b.onclick=()=>go(i); nav.appendChild(b);});
+document.querySelectorAll('.page').forEach((pg,i)=>{
+  const dv=document.createElement('div'); dv.className='pager';
+  const prev=document.createElement('button'); prev.textContent='◀ 上一页'; prev.disabled=(i===0); prev.onclick=()=>go(i-1);
+  const next=document.createElement('button'); next.textContent= i===TITLES.length-1 ? '回到首页' : '下一页 ▶'; next.onclick=()=>go((i+1)%TITLES.length);
+  dv.appendChild(prev); dv.appendChild(next); pg.appendChild(dv);
+});
+function go(i){ CUR=i;
+  document.querySelectorAll('.page').forEach((p,k)=>p.classList.toggle('active',k===i));
+  [...nav.children].forEach((b,k)=>b.classList.toggle('active',k===i));
+  window.scrollTo({top:0});
+  requestAnimationFrame(()=>drawPage(i));
+}
+window.addEventListener('resize',()=>drawPage(CUR));
+
+function drawPage(i){
+  if(i===0){drawVIF();drawBV();drawSampling();drawOverfit();}
+  if(i===2) {drawSVD(); drawOrth();}
+  if(i===3) drawGeo();
+  if(i===4) drawST();
+  if(i===5) drawCmp();
+  if(i===6) drawCV();
+  if(i===7) {drawLassoPath(); drawRidgePath();}
+}
+
+/* ---------- P1 工具：伪随机数与高斯消元 ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function gauss(A,b){
+  const m=b.length, M=A.map((r,i)=>r.slice().concat([b[i]]));
+  for(let c=0;c<m;c++){
+    let piv=c; for(let r=c+1;r<m;r++) if(Math.abs(M[r][c])>Math.abs(M[piv][c])) piv=r;
+    const tmp=M[c];M[c]=M[piv];M[piv]=tmp;
+    for(let r=c+1;r<m;r++){const f=M[r][c]/M[c][c]; for(let k=c;k<=m;k++) M[r][k]-=f*M[c][k];}
+  }
+  const x=new Array(m).fill(0);
+  for(let r=m-1;r>=0;r--){let s=M[r][m]; for(let k=r+1;k<m;k++) s-=M[r][k]*x[k]; x[r]=s/M[r][r];}
+  return x;
+}
+const NRAND=(()=>{ // Box-Muller 正态发生器工厂
+  return function(rand){let u=0,v=0;while(!u)u=rand();while(!v)v=rand();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+})();
+
+/* ---------- P1：VIF ---------- */
+function drawVIF(){
+  const cv=document.getElementById('vifChart'); const [ctx,W,H]=fit(cv,190);
+  const rho=+document.getElementById('rhoSlider').value;
+  document.getElementById('rhoVal').textContent=rho.toFixed(2);
+  const pad={l:44,r:16,t:14,b:26};
+  const [X,Y]=axes(ctx,W,H,pad,0,1,0,22,[0,0.2,0.4,0.6,0.8,1],[0,5,10,15,20]);
+  const pts=[]; for(let r=0;r<=0.995;r+=0.005) pts.push([X(r),Y(1/(1-r*r))]);
+  line(ctx,pts,C.blue,2.5);
+  const vif=1/(1-rho*rho);
+  dot(ctx,X(rho),Math.max(Y(vif),14),C.red,5);
+  ctx.strokeStyle=C.red; ctx.setLineDash([4,3]); ctx.beginPath();ctx.moveTo(X(rho),H-pad.b);ctx.lineTo(X(rho),Math.max(Y(vif),14));ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=C.red; ctx.font='bold 13px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('VIF = '+vif.toFixed(1)+' 倍', X(rho)+8, Math.max(Y(vif),20));
+  ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('相关系数 ρ', (W+pad.l)/2, H-6);
+  const msg=document.getElementById('vifMsg');
+  msg.innerHTML = vif<2 ? '✅ 共线性轻微（VIF&lt;2），OLS 方差尚可接受。'
+    : vif<5 ? '⚠️ 中等共线性：方差被放大约 <b>'+vif.toFixed(1)+'</b> 倍（VIF 5~10 需警惕）。'
+    : '🚨 严重共线性（VIF&gt;10）：方差膨胀 <b>'+vif.toFixed(1)+' 倍</b>！ρ→1 时 VIF→∞——"除以近零奇异值"的 2 维版本，这正是需要正则化的场景。';
+}
+document.getElementById('rhoSlider').oninput=drawVIF;
+
+/* ---------- P1：抽样分布云图 ---------- */
+function drawSampling(){
+  const cv=document.getElementById('sampChart'); const [ctx,W,H]=fit(cv,270);
+  const rho=+document.getElementById('sampRho').value;
+  document.getElementById('sampRhoVal').textContent=rho.toFixed(2);
+  const n=40, sig=0.6, betaT=[1.2,0.8], reps=60;
+  // 固定设计：x1 标准正态，x2 = ρx1 + √(1-ρ²)e，再标准化
+  const des=mulberry32(11);
+  const x1=[],x2raw=[];
+  for(let i=0;i<n;i++){const a=NRAND(des),b=NRAND(des);x1.push(a);x2raw.push(rho*a+Math.sqrt(1-rho*rho)*b);}
+  const m1=x1.reduce((s,v)=>s+v)/n, sd1=Math.sqrt(x1.reduce((s,v)=>s+(v-m1)**2,0)/n);
+  const m2=x2raw.reduce((s,v)=>s+v)/n, sd2=Math.sqrt(x2raw.reduce((s,v)=>s+(v-m2)**2,0)/n);
+  const xa=x1.map(v=>(v-m1)/sd1), xb=x2raw.map(v=>(v-m2)/sd2);
+  const s11=xa.reduce((s,v)=>s+v*v,0), s22=xb.reduce((s,v)=>s+v*v,0), s12=xa.reduce((s,v,i)=>s+v*xb[i],0);
+  // 重复抽样估计
+  const rng=mulberry32(99); const pts=[];
+  for(let r=0;r<reps;r++){
+    const y=xa.map((v,i)=>betaT[0]*v+betaT[1]*xb[i]+sig*NRAND(rng));
+    const b1=xa.reduce((s,v,i)=>s+v*y[i],0), b2=xb.reduce((s,v,i)=>s+v*y[i],0);
+    pts.push(gauss([[s11,s12],[s12,s22]],[b1,b2]));
+  }
+  const pad={l:48,r:16,t:14,b:40};
+  const [X,Y]=axes(ctx,W,H,pad,0,2.5,-0.5,2,[-0.0,0.5,1,1.5,2,2.5],[-0.5,0,0.5,1,1.5,2]);
+  // 共线方向参考线 (1,1)
+  line(ctx,[[X(0.2),Y(0.2)],[X(2.3),Y(2.3)]],C.gray,1.2,[6,4]);
+  // 理论 95% 椭圆：协方差 = σ² (X'X)^{-1}
+  const det=s11*s22-s12*s12;
+  const inv=[[s22/det,-s12/det],[-s12/det,s11/det]];
+  const cvM=[[sig*sig*inv[0][0],sig*sig*inv[0][1]],[sig*sig*inv[1][0],sig*sig*inv[1][1]]];
+  const tr=cvM[0][0]+cvM[1][1], det2=cvM[0][0]*cvM[1][1]-cvM[0][1]*cvM[1][0];
+  const l1=tr/2+Math.sqrt(tr*tr/4-det2), l2=tr/2-Math.sqrt(tr*tr/4-det2);
+  const th=Math.atan2(l1-cvM[0][0], cvM[0][1]||1e-12);
+  const e=[];
+  for(let t=0;t<=2*Math.PI+0.01;t+=0.05){
+    const r=2.448; // χ²₂ 的 95% 半径
+    const ux=r*Math.sqrt(l1)*Math.cos(t), uy=r*Math.sqrt(l2)*Math.sin(t);
+    e.push([X(betaT[0]+ux*Math.cos(th)-uy*Math.sin(th)), Y(betaT[1]+ux*Math.sin(th)+uy*Math.cos(th))]);
+  }
+  line(ctx,e,C.blue,1.6,[5,4]);
+  // 散点
+  pts.forEach(p=>dot(ctx,X(p[0]),Y(p[1]),'rgba(220,38,38,0.6)',4));
+  // 真实值
+  dot(ctx,X(betaT[0]),Y(betaT[1]),'#0f172a',6);
+  ctx.fillStyle='#0f172a';ctx.font='bold 12px sans-serif';ctx.textAlign='left';
+  ctx.fillText('真实 β',X(betaT[0])+8,Y(betaT[1])+4);
+  ctx.fillStyle='#64748b';ctx.font='11.5px sans-serif';ctx.textAlign='center';
+  ctx.fillText('β̂₁',W-pad.r-8,H-pad.b+30);ctx.fillText('β̂₂',pad.l-30,pad.t+8);
+  // 经验方差
+  const m=pts.reduce((s,p)=>s+p[0],0)/reps;
+  const emp=Math.sqrt(pts.reduce((s,p)=>s+(p[0]-m)**2,0)/reps);
+  const theo=sig/Math.sqrt(n)*1/Math.sqrt(1-rho*rho);
+  ctx.fillStyle=C.red;ctx.font='12px sans-serif';ctx.textAlign='left';
+  ctx.fillText('β̂₁ 的经验 SD = '+emp.toFixed(3)+'，理论 σ/√n·1/√(1−ρ²) = '+theo.toFixed(3),pad.l+4,pad.t+2);
+  const msg=document.getElementById('sampMsg');
+  msg.innerHTML = rho<0.7 ? '☁️ 云团紧致：估计量稳定，无偏且方差小——OLS 的舒适区。'
+   : rho<0.9 ? '⚠️ 云团沿 (1,1) 方向拉长：方差明显增大，单系数已不可靠。'
+   : '🚨 云团拉成<b>细针</b>：数据只能确定 β₁+β₂ 之和，几乎无法区分两个系数各自取值——单个系数的任何估计都毫无意义。';
+}
+document.getElementById('sampRho').oninput=drawSampling;
+
+/* ---------- P1：过拟合双面曲线 ---------- */
+const OF=(()=>{ // 固定一次数据生成
+  const rand=mulberry32(2024), N=300, nTr=40, pmax=38;
+  const X=[]; for(let i=0;i<N;i++){const row=[];for(let j=0;j<pmax;j++)row.push(NRAND(rand));X.push(row);}
+  const y=X.map(row=>2*row[0]-1.5*row[1]+1.0*row[2]+0.8*NRAND(rand));
+  return {X,y,nTr,pmax};
+})();
+function fitOLS(p){
+  const {X,y,nTr}=OF;
+  const A=Array.from({length:p},()=>new Array(p).fill(0)), b=new Array(p).fill(0);
+  for(let i=0;i<nTr;i++){
+    for(let j=0;j<p;j++){ b[j]+=X[i][j]*y[i];
+      for(let k=0;k<p;k++) A[j][k]+=X[i][j]*X[i][k]; }
+  }
+  return gauss(A,b);
+}
+function drawOverfit(){
+  const cv=document.getElementById('ofChart'); const [ctx,W,H]=fit(cv,280);
+  const p0=+document.getElementById('ofSlider').value;
+  document.getElementById('ofPVal').textContent=p0;
+  const {X,y,nTr,pmax}=OF;
+  const ps=[], r2s=[], mses=[];
+  for(let p=3;p<=pmax;p++){
+    const beta=fitOLS(p);
+    let ssr=0,sst=0; const my=y.slice(0,nTr).reduce((s,v)=>s+v)/nTr;
+    for(let i=0;i<nTr;i++){const f=beta.reduce((s,bj,j)=>s+bj*X[i][j],0);ssr+=(y[i]-f)**2;sst+=(y[i]-my)**2;}
+    let se=0; for(let i=nTr;i<X.length;i++){const f=beta.reduce((s,bj,j)=>s+bj*X[i][j],0);se+=(y[i]-f)**2;}
+    ps.push(p); r2s.push(1-ssr/sst); mses.push(se/(X.length-nTr));
+  }
+  const pad={l:48,r:16,t:14,b:40};
+  const mid=(H-pad.t-pad.b)/2;
+  const y1t=pad.t, y1b=pad.t+mid-14, y2t=y1b+28, y2b=H-pad.b;
+  const Xg=x=>pad.l+(x-3)/(pmax-3)*(W-pad.l-pad.r);
+  ctx.font='10.5px sans-serif';
+  // 面板1：R²
+  let Y1=v=>y1b-v*(y1b-y1t);
+  [0,0.5,1].forEach(v=>{line(ctx,[[pad.l,Y1(v)],[W-pad.r,Y1(v)]],C.grid,1);ctx.fillStyle='#64748b';ctx.textAlign='right';ctx.fillText(v.toFixed(1),pad.l-5,Y1(v)+3);});
+  const pts1=r2s.map((v,i)=>[Xg(ps[i]),Y1(Math.min(v,1))]);
+  line(ctx,pts1,C.blue,2.5);
+  ctx.fillStyle=C.blue;ctx.textAlign='left';ctx.font='bold 12px sans-serif';
+  ctx.fillText('训练 R²（越高越"好看"）',pad.l+6,y1t+12);
+  // 面板2：测试 MSE（裁剪极端值，防止 p→n 时数值爆炸压扁曲线）
+  const mbase=Math.min(...mses);
+  const cap=Math.max(8*mbase, Math.max(...mses.filter(v=>v<50*mbase))*1.05);
+  const mmax=cap;
+  let Y2=v=>y2b-Math.min(v,cap)/mmax*(y2b-y2t);
+  [0,mmax/2,mmax].forEach(v=>{line(ctx,[[pad.l,Y2(v)],[W-pad.r,Y2(v)]],C.grid,1);ctx.fillStyle='#64748b';ctx.textAlign='right';ctx.fillText(v.toFixed(1)+(v===mmax&&Math.max(...mses)>cap?'+':''),pad.l-5,Y2(v)+3);});
+  const pts2=mses.map((v,i)=>[Xg(ps[i]),Y2(v)]);
+  line(ctx,pts2,C.red,2.5);
+  ctx.fillStyle=C.red;ctx.textAlign='left';ctx.font='bold 12px sans-serif';
+  ctx.fillText('测试 MSE（越低越好）',pad.l+6,y2t+12);
+  // x 轴
+  for(let p=5;p<=pmax;p+=5){ctx.fillStyle='#64748b';ctx.textAlign='center';ctx.fillText(p,Xg(p),H-pad.b+14);}
+  ctx.fillText('特征数 p（真实模型只用 3 个！）',(W+pad.l)/2,H-6);
+  // 当前位置
+  const idx=p0-3;
+  line(ctx,[[Xg(p0),y1t],[Xg(p0),y2b]],C.gray,1.3,[4,3]);
+  dot(ctx,Xg(p0),pts1[idx][1],C.blue,4.5); dot(ctx,Xg(p0),pts2[idx][1],C.red,4.5);
+  ctx.fillStyle=C.blue;ctx.textAlign='left';ctx.font='11.5px sans-serif';
+  ctx.fillText('R²='+r2s[idx].toFixed(3),Xg(p0)+5,pts1[idx][1]);
+  ctx.fillStyle=C.red;ctx.fillText('MSE='+mses[idx].toFixed(1),Xg(p0)+5,pts2[idx][1]+12);
+  const msg=document.getElementById('ofMsg');
+  const pn=(p0/OF.nTr).toFixed(2);
+  msg.innerHTML = p0<=10 ? '📍 p = '+p0+'（p/n = '+pn+'）：测试 MSE 接近最低——真实结构（3 个信号特征）被捕捉，噪声特征伤害尚小。'
+   : p0<=25 ? '⚠️ p = '+p0+'（p/n = '+pn+'）：训练 R² 已接近 '+r2s[idx].toFixed(2)+'，但测试 MSE 持续爬升——噪声系数开始"吞掉"真实信号的贡献。'
+   : '🚨 p = '+p0+'（p/n = '+pn+'）：训练 R² ≈ '+r2s[idx].toFixed(3)+'（即将=1 精确插值），测试 MSE 已达最低点的 <b>'+(mses[idx]/mbase).toFixed(1)+' 倍</b>——<b>过拟合现场</b>。当 p=n−1 时训练误差为 0，模型只记住了噪声。';
+}
+document.getElementById('ofSlider').oninput=drawOverfit;
+
+/* ---------- P1：Bias-Variance ---------- */
+function drawBV(){
+  const cv=document.getElementById('bvChart'); const [ctx,W,H]=fit(cv,230);
+  const u=+document.getElementById('bvSlider').value/100;
+  document.getElementById('bvLam').textContent=(u*5).toFixed(2);
+  const pad={l:44,r:16,t:14,b:26};
+  const [X,Y]=axes(ctx,W,H,pad,0,1,0,1.1,[0,0.25,0.5,0.75,1],[0,0.25,0.5,0.75,1]);
+  const N=120, bias=[],vari=[],mse=[];
+  for(let k=0;k<=N;k++){const x=k/N;
+    const b=1.25*Math.pow(x,1.7), v=0.9*Math.pow(1-x,2.2), m=b+v;
+    bias.push([X(x),Y(b)]);vari.push([X(x),Y(v)]);mse.push([X(x),Y(m)]);}
+  line(ctx,vari,C.teal,2.5); line(ctx,bias,C.orange,2.5,[6,4]); line(ctx,mse,C.red,3);
+  ctx.strokeStyle=C.gray;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(X(u),14);ctx.lineTo(X(u),H-pad.b);ctx.stroke();ctx.setLineDash([]);
+  dot(ctx,X(u),Y(1.25*Math.pow(u,1.7)+0.9*Math.pow(1-u,2.2)),C.red,5);
+  ctx.font='12px sans-serif';ctx.textAlign='left';
+  ctx.fillStyle=C.teal;ctx.fillText('方差 Var',X(0.05),Y(0.9*Math.pow(1-0.05,2.2))-8);
+  ctx.fillStyle=C.orange;ctx.fillText('偏差² Bias²',X(0.62),Y(1.25*Math.pow(0.62,1.7))-8);
+  ctx.fillStyle=C.red;ctx.fillText('MSE',X(0.42),Y(1.25*Math.pow(0.42,1.7)+0.9*Math.pow(1-0.42,2.2))-10);
+  ctx.fillStyle='#64748b';ctx.textAlign='center';ctx.fillText('正则化强度 λ（归一化）',(W+pad.l)/2,H-6);
+  const b=1.25*Math.pow(u,1.7), v=0.9*Math.pow(1-u,2.2);
+  const msg=document.getElementById('bvMsg');
+  msg.innerHTML = u<0.15 ? '📍 几乎无正则化：<b>无偏但方差大</b>（OLS 情形，回顾上面实验 B 的云图）→ 测试误差高。'
+    : u<0.5 ? '📍 甜点区附近：偏差小幅上升，方差大幅下降，<b>MSE 接近最优</b>。'
+    : '📍 过度正则化：方差已很小，但<b>偏差主导</b>，MSE 回升 → 欠拟合。';
+}
+document.getElementById('bvSlider').oninput=drawBV;
+
+/* ---------- 逐步推导揭示 ---------- */
+function makeRevealer(btnId, sel, doneId){
+  const boxes=[...document.querySelectorAll(sel+' .stepbox')]; let i=0;
+  document.getElementById(btnId).onclick=()=>{
+    if(i<boxes.length) boxes[i++].classList.add('show');
+    if(i>=boxes.length){document.getElementById(btnId).style.display='none';
+      if(doneId) document.getElementById(doneId).style.display='inline';}
+  };
+}
+makeRevealer('ridgeNext','#ridgeSteps','ridgeDone');
+makeRevealer('invNext','#invSteps',null);
+makeRevealer('softNext','#softSteps','softDone');
+document.getElementById('invNext').textContent='▶ 展开证法 A（特征值论证）';
+
+/* ---------- P3：SVD 收缩 ---------- */
+function drawSVD(){
+  const cv=document.getElementById('svdChart'); const [ctx,W,H]=fit(cv,240);
+  const lam=Math.pow(10, -1 + (+document.getElementById('svdSlider').value)/10 - 2.5);
+  const L=Math.pow(10, (+document.getElementById('svdSlider').value)/10 - 1);
+  document.getElementById('svdLam').textContent=L.toFixed(2);
+  const pad={l:44,r:16,t:14,b:26};
+  const [X,Y]=axes(ctx,W,H,pad,0,5,0,1.05,[0,1,2,3,4,5],[0,0.25,0.5,0.75,1]);
+  [0.25,0.5,2,4].forEach(f=>{
+    const pts=[]; for(let d=0.01;d<=5;d+=0.05) pts.push([X(d),Y(d*d/(d*d+L*f))]);
+    line(ctx,pts,'#c7d2fe',1.5);
+  });
+  const pts=[]; for(let d=0.01;d<=5;d+=0.05) pts.push([X(d),Y(d*d/(d*d+L))]);
+  line(ctx,pts,C.red,3);
+  ctx.font='12px sans-serif';ctx.fillStyle='#64748b';ctx.textAlign='center';
+  ctx.fillText('奇异值 d（其平方 d² 为该主成分方向的变异）',(W+pad.l)/2,H-6);
+  ctx.textAlign='left';ctx.fillStyle=C.red;
+  ctx.fillText('收缩因子 d²/(d²+λ='+L.toFixed(2)+')',X(0.3),Y(0.5));
+  ctx.fillStyle='#94a3b8';ctx.fillText('λ 取其他值时的曲线（虚线示意）',X(2.6),Y(0.18));
+}
+document.getElementById('svdSlider').oninput=drawSVD;
+
+/* ---------- P3：正交 Ridge ---------- */
+function drawOrth(){
+  const cv=document.getElementById('orthChart'); const [ctx,W,H]=fit(cv,230);
+  const lam=(+document.getElementById('orthSlider').value)/40;
+  document.getElementById('orthLam').textContent=lam.toFixed(2);
+  document.getElementById('orthFac').textContent=(1/(1+lam)).toFixed(3);
+  const ols=[1.2,-0.8,0.6,-0.4,0.3], n=ols.length;
+  const pad={l:44,r:16,t:20,b:44};
+  const [X,Y]=axes(ctx,W,H,pad,0,n+0.6,-1.4,1.4,[1,2,3,4,5],[-1,-0.5,0,0.5,1]);
+  ols.forEach((b,j)=>{
+    const x=X(j+1);
+    line(ctx,[[x,Y(0)],[x,Y(b)]],'#0f172a',2.5);
+    dot(ctx,x,Y(b),'#0f172a',4);
+    dot(ctx,x,Y(b/(1+lam)),C.red,5);
+    line(ctx,[[x,Y(b)],[x,Y(b/(1+lam))]],C.red,1.5,[3,3]);
+  });
+  ctx.strokeStyle=C.gray;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(pad.l,Y(0));ctx.lineTo(W-pad.r,Y(0));ctx.stroke();ctx.setLineDash([]);
+  ctx.font='12px sans-serif';ctx.fillStyle='#0f172a';ctx.textAlign='left';ctx.fillText('● OLS 系数',pad.l+6,16);
+  ctx.fillStyle=C.red;ctx.fillText('● Ridge = OLS/(1+λ)',pad.l+96,16);
+}
+document.getElementById('orthSlider').oninput=drawOrth;
+
+/* ---------- P4：L1 vs L2 几何图解 ---------- */
+const GEO={ols:[1.1,0.45],rho:0.55};
+function rss(b){
+  const dx=b[0]-GEO.ols[0], dy=b[1]-GEO.ols[1];
+  return dx*dx+2*GEO.rho*dx*dy+dy*dy;
+}
+function drawGeo(){
+  const cv=document.getElementById('geoCanvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=560,H=440; cv.width=W*dpr; cv.height=H*dpr;
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  const cx=W/2, cy=H/2, sc=100;
+  const P=(x,y)=>[cx+x*sc, cy-y*sc];
+  const s=(+document.getElementById('sSlider').value)/100;
+  document.getElementById('sVal').textContent=s.toFixed(2);
+  const mode=[...document.getElementsByName('pen')].find(r=>r.checked).value;
+  // 网格与坐标轴
+  ctx.font='10px sans-serif';ctx.fillStyle='#cbd5e1';ctx.strokeStyle='#f1f5f9';
+  for(let g=-2;g<=2;g++){
+    let a=P(g,-1.9),b=P(g,1.9);line(ctx,[a,b],'#f1f5f9',1);
+    a=P(-2.4,g);b=P(2.4,g);line(ctx,[a,b],'#f1f5f9',1);
+    ctx.textAlign='center';ctx.fillStyle='#94a3b8';
+    if(g!==0){let p=P(g,0);ctx.fillText(g,p[0],p[1]+12);p=P(0,g);ctx.textAlign='right';ctx.fillText(g,p[0]-4,p[1]+3);}
+  }
+  let a=P(-2.4,0),b=P(2.4,0);line(ctx,[a,b],'#94a3b8',1.5);
+  a=P(0,-1.9);b=P(0,1.9);line(ctx,[a,b],'#94a3b8',1.5);
+  ctx.fillStyle='#334155';ctx.font='12px sans-serif';
+  let p=P(2.35,-0.14);ctx.textAlign='right';ctx.fillText('β₁',p[0],p[1]);
+  p=P(0.08,1.85);ctx.textAlign='left';ctx.fillText('β₂',p[0],p[1]);
+  // RSS 等高线（椭圆），固定
+  const l1=1+GEO.rho,l2=1-GEO.rho, sq=Math.SQRT1_2;
+  [0.45,0.75,1.05,1.4,1.8].forEach(r=>{
+    const pts=[];
+    for(let t=0;t<=2*Math.PI+0.01;t+=0.03){
+      const ux=Math.cos(t)*sq/Math.sqrt(l1)+Math.sin(t)*sq/Math.sqrt(l2);
+      const uy=Math.cos(t)*sq/Math.sqrt(l1)-Math.sin(t)*sq/Math.sqrt(l2);
+      pts.push(P(GEO.ols[0]+r*ux, GEO.ols[1]+r*uy));
+    }
+    line(ctx,pts,'#94a3b8',1.2);
+  });
+  // 约束域
+  ctx.beginPath();
+  if(mode==='l1'){
+    const v=[[s,0],[0,s],[-s,0],[0,-s]];
+    v.forEach((q,i)=>{const pt=P(q[0],q[1]); i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]);});
+  }else{
+    for(let t=0;t<=2*Math.PI+0.01;t+=0.03){const pt=P(s*Math.cos(t),s*Math.sin(t)); t?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1]);}
+  }
+  ctx.closePath();
+  ctx.fillStyle= mode==='l1' ? 'rgba(220,38,38,0.08)' : 'rgba(37,99,235,0.08)';
+  ctx.fill();
+  ctx.strokeStyle= mode==='l1' ? C.red : C.blue; ctx.lineWidth=2.5; ctx.stroke();
+  // 求数值解
+  let sol=null;
+  const inside = mode==='l1' ? (Math.abs(GEO.ols[0])+Math.abs(GEO.ols[1])<=s) : (Math.hypot(...GEO.ols)<=s);
+  if(inside) sol=GEO.ols.slice();
+  else{
+    let best=1e18;
+    if(mode==='l1'){
+      for(let t=-s;t<=s;t+=s/1500){
+        [s-Math.abs(t), -(s-Math.abs(t))].forEach(y2=>{
+          const r=rss([t,y2]); if(r<best){best=r;sol=[t,y2];}
+        });
+      }
+    }else{
+      for(let t=0;t<2*Math.PI;t+=0.002){
+        const q=[s*Math.cos(t),s*Math.sin(t)], r=rss(q);
+        if(r<best){best=r;sol=q;}
+      }
+    }
+  }
+  // OLS 标记
+  p=P(GEO.ols[0],GEO.ols[1]);
+  ctx.strokeStyle='#0f172a';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(p[0]-7,p[1]);ctx.lineTo(p[0]+7,p[1]);ctx.moveTo(p[0],p[1]-7);ctx.lineTo(p[0],p[1]+7);ctx.stroke();
+  ctx.fillStyle='#0f172a';ctx.font='12px sans-serif';ctx.textAlign='left';
+  ctx.fillText('β̂_OLS',p[0]+9,p[1]+4);
+  // 解
+  const sp=P(sol[0],sol[1]);
+  line(ctx,[P(0,0),sp],'#64748b',1.2,[4,3]);
+  dot(ctx,sp[0],sp[1],C.red,6);
+  ctx.fillStyle=C.red;ctx.font='bold 12px sans-serif';
+  ctx.fillText('正则化解',sp[0]+8,sp[1]-8);
+  // L1 且落在轴上 → 高亮归零
+  const msg=document.getElementById('geoMsg');
+  if(mode==='l1'){
+    if(inside){msg.innerHTML='✅ s 很大：约束域已包含 OLS 解，正则化不起作用（等价于 λ≈0）。';}
+    else if(Math.abs(sol[0])<0.03||Math.abs(sol[1])<0.03){
+      const zeroAxis = Math.abs(sol[0])<0.03 ? 'β₁' : 'β₂';
+      line(ctx,[sp,P(sol[0],0)],C.green,2,[5,3]);
+      line(ctx,[sp,P(0,sol[1])],C.green,2,[5,3]);
+      msg.innerHTML='🎯 <b>切点落在坐标轴上：'+zeroAxis+' 被精确压为 0！</b><br>这就是 Lasso 的稀疏解——菱形尖角"抓住"了等高线。';
+    } else {
+      msg.innerHTML='ℹ️ 切点在菱形的<b>棱</b>上（非轴点）：两个系数都非零但都受约束。<br>继续增大 λ（减小 s），等高线终将被推向某个尖角。';
+    }
+  }else{
+    msg.innerHTML = inside ? '✅ s 很大：约束未起作用。' : '🔵 切点在<b>平滑圆周</b>的一般位置上：β̂₁、β̂₂ <b>均不为 0</b>。<br>圆形没有"尖角"可抓，Ridge 因此无法产生精确 0。';
+  }
+}
+document.getElementById('sSlider').oninput=drawGeo;
+[...document.getElementsByName('pen')].forEach(r=>r.onchange=drawGeo);
+</script>
+
+<script>
+/* ---------- 修正：SVD 的 λ 映射（对数刻度） ---------- */
+function drawSVD(){
+  const cv=document.getElementById('svdChart'); const [ctx,W,H]=fit(cv,240);
+  const L=Math.pow(10, (+document.getElementById('svdSlider').value)/20 - 1);
+  document.getElementById('svdLam').textContent=L.toFixed(2);
+  const pad={l:44,r:16,t:14,b:26};
+  const [X,Y]=axes(ctx,W,H,pad,0,5,0,1.05,[0,1,2,3,4,5],[0,0.25,0.5,0.75,1]);
+  [0.25,0.5,2,4].forEach(f=>{
+    const pts=[]; for(let d=0.01;d<=5;d+=0.05) pts.push([X(d),Y(d*d/(d*d+L*f))]);
+    line(ctx,pts,'#c7d2fe',1.5);
+  });
+  const pts=[]; for(let d=0.01;d<=5;d+=0.05) pts.push([X(d),Y(d*d/(d*d+L))]);
+  line(ctx,pts,C.red,3);
+  ctx.font='12px sans-serif';ctx.fillStyle='#64748b';ctx.textAlign='center';
+  ctx.fillText('奇异值 d（d² 为该主成分方向的变异）',(W+pad.l)/2,H-6);
+  ctx.textAlign='left';ctx.fillStyle=C.red;
+  ctx.fillText('收缩因子 d²/(d²+λ='+L.toFixed(2)+')',X(0.35),Y(0.42));
+}
+document.getElementById('svdSlider').value=20;
+
+/* ---------- P5：软门限算子图 ---------- */
+function drawST(){
+  const cv=document.getElementById('stChart'); const [ctx,W,H]=fit(cv,260);
+  const lam=(+document.getElementById('stSlider').value)/100;
+  const beta=(+document.getElementById('stBetaSlider').value)/10;
+  document.getElementById('stLam').textContent=lam.toFixed(2);
+  document.getElementById('stBeta').textContent=beta.toFixed(2);
+  const pad={l:44,r:16,t:14,b:26}, xr=2.5;
+  const [X,Y]=axes(ctx,W,H,pad,-xr,xr,-2,2,[-2,-1,0,1,2],[-2,-1,0,1,2]);
+  const yx=[]; for(let x=-xr;x<=xr;x+=0.05) yx.push([X(x),Y(x)]);
+  line(ctx,yx,'#cbd5e1',1.5,[5,4]);           // y=x 参考线
+  const s=(x)=>Math.sign(x)*Math.max(0,Math.abs(x)-lam);
+  const pts=[]; for(let x=-xr;x<=xr;x+=0.02) pts.push([X(x),Y(s(x))]);
+  line(ctx,pts,C.blue,3);                      // S_λ 曲线
+  ctx.strokeStyle=C.blue;ctx.lineWidth=6;ctx.beginPath();
+  ctx.moveTo(X(-lam),Y(0));ctx.lineTo(X(lam),Y(0));ctx.stroke();  // 零区加粗
+  // β̂ 的映射
+  line(ctx,[[X(beta),H-pad.b],[X(beta),Y(s(beta))]],C.red,1.5,[4,3]);
+  dot(ctx,X(beta),Y(beta),'#0f172a',4);
+  dot(ctx,X(beta),Y(s(beta)),C.red,6);
+  line(ctx,[[X(beta),Y(s(beta))],[pad.l,Y(s(beta))]],C.red,1.5,[4,3]);
+  ctx.font='12px sans-serif';
+  ctx.fillStyle='#0f172a';ctx.textAlign = beta>0?'right':'left';
+  ctx.fillText('β̂_OLS='+beta.toFixed(2), X(beta)+(beta>0?-6:6), Y(beta)-6);
+  ctx.fillStyle=C.red;ctx.textAlign='left';
+  ctx.fillText('S_λ(β̂)='+s(beta).toFixed(2), pad.l+6, Y(s(beta))-6);
+  ctx.fillStyle='#64748b';ctx.textAlign='center';
+  ctx.fillText('输入：OLS 系数 β̂',(W+pad.l)/2,H-6);
+  const msg=document.getElementById('stMsg');
+  if(Math.abs(beta)<=lam) msg.innerHTML='📍 <b>|β̂| = '+Math.abs(beta).toFixed(2)+' ≤ λ</b><br>输出被<b style="color:'+C.red+'">压到精确的 0</b>——该特征被淘汰！<br><span style="color:#64748b;font-size:12.5px">对应推导的情形 ③</span>';
+  else msg.innerHTML='📍 <b>|β̂| = '+Math.abs(beta).toFixed(2)+' &gt; λ</b><br>输出 = β̂ ∓ λ = <b>'+s(beta).toFixed(2)+'</b><br>即向 0 平移 λ，保留该特征。<br><span style="color:#64748b;font-size:12.5px">对应推导的情形 ①/②</span>';
+}
+document.getElementById('stSlider').oninput=drawST;
+document.getElementById('stBetaSlider').oninput=drawST;
+
+/* ---------- P6：三方法对比（Chart.js 分组柱状图） ---------- */
+const OLS6=[1.20,0.80,-0.50,0.30,-0.15,0.05], LAB6=['X₁','X₂','X₃','X₄','X₅','X₆'];
+const soft=(x,l)=>Math.sign(x)*Math.max(0,Math.abs(x)-l);
+let cmpChart=null;
+function drawCmp(){
+  const lam=(+document.getElementById('cmpSlider').value)/100;
+  document.getElementById('cmpLam').textContent=lam.toFixed(2);
+  const ridge=OLS6.map(b=>b/(1+lam)), lasso=OLS6.map(b=>soft(b,lam));
+  if(!cmpChart){
+    cmpChart=new Chart(document.getElementById('cmpChart'),{type:'bar',
+      data:{labels:LAB6,datasets:[
+        {label:'OLS',data:OLS6,backgroundColor:'rgba(100,116,139,0.75)'},
+        {label:'Ridge = OLS/(1+λ)',data:ridge,backgroundColor:'rgba(37,99,235,0.8)'},
+        {label:'Lasso = S_λ(OLS)',data:lasso,backgroundColor:'rgba(220,38,38,0.8)'}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        scales:{y:{min:-1.4,max:1.4,grid:{color:'#e2e8f0'}},x:{grid:{display:false}}},
+        plugins:{legend:{position:'top'}}}});
+  }else{
+    cmpChart.data.datasets[1].data=ridge; cmpChart.data.datasets[2].data=lasso; cmpChart.update();
+  }
+  const dead=OLS6.map((b,i)=>Math.abs(b)<=lam?LAB6[i]:null).filter(Boolean);
+  document.getElementById('cmpMsg').innerHTML = dead.length===0
+    ? 'ℹ️ 当前 λ 下 Lasso 尚未淘汰任何特征；所有 Lasso 柱 = OLS 柱 ± λ（向 0 平移）。'
+    : '🎯 λ = '+lam.toFixed(2)+' 时，Lasso 已将 <b>'+dead.join('、')+'</b> 的系数<b>精确归零</b>（'+dead.length+' 个特征被淘汰）；而 Ridge 只是把所有柱子按比例 '+ (1/(1+lam)).toFixed(2) +' 等比缩小。';
+}
+document.getElementById('cmpSlider').oninput=drawCmp;
+
+/* ---------- P7：CV 曲线 ---------- */
+function drawCV(){
+  const cv=document.getElementById('cvChart'); const [ctx,W,H]=fit(cv,260);
+  const loga=DATA.cv.loga, mse=DATA.cv.mse, se=DATA.cv.se;
+  const n=loga.length;
+  let mi=0; mse.forEach((m,i)=>{if(m<mse[mi])mi=i;});
+  const thr=mse[mi]+se[mi];
+  let one=mi; for(let i=0;i<n;i++) if(mse[i]<=thr && loga[i]>loga[one]) one=i;
+  const pad={l:48,r:16,t:16,b:26};
+  const ymin=Math.min(...mse)-0.06, ymax=Math.max(...mse)+0.12;
+  const [X,Y]=axes(ctx,W,H,pad,loga[0],loga[n-1],ymin,ymax,[-3,-2,-1,0],[0.8,1.0,1.2,1.4]);
+  // 误差棒
+  for(let i=0;i<n;i+=2){
+    line(ctx,[[X(loga[i]),Y(mse[i]-se[i])],[X(loga[i]),Y(mse[i]+se[i])]],'#c7d2fe',1);
+  }
+  const pts=loga.map((l,i)=>[X(l),Y(mse[i])]);
+  line(ctx,pts,C.blue,2.5);
+  // 1-SE 阈值线
+  line(ctx,[[pad.l,Y(thr)],[W-pad.r,Y(thr)]],C.green,1.8,[7,4]);
+  ctx.fillStyle=C.green;ctx.font='11.5px sans-serif';ctx.textAlign='right';
+  ctx.fillText('CV-MSE_min + 1SE',W-pad.r-4,Y(thr)-5);
+  // 两个候选点
+  dot(ctx,X(loga[mi]),Y(mse[mi]),C.red,6);
+  dot(ctx,X(loga[one]),Y(mse[one]),C.green,6);
+  ctx.font='bold 11.5px sans-serif';ctx.textAlign='center';
+  ctx.fillStyle=C.red;ctx.fillText('λ.min（MSE最小）',X(loga[mi]),Y(mse[mi])-10);
+  ctx.fillStyle=C.green;ctx.fillText('λ.1se（1-SE法则推荐）',X(loga[one]),Y(mse[one])+18);
+  // 浏览线
+  const pos=Math.round((+document.getElementById('cvSlider').value)/100*(n-1));
+  document.getElementById('cvPos').textContent=loga[pos].toFixed(2);
+  line(ctx,[[X(loga[pos]),pad.t],[X(loga[pos]),H-pad.b]],C.gray,1.2,[3,3]);
+  dot(ctx,X(loga[pos]),Y(mse[pos]),'#0f172a',4);
+  const within = mse[pos]<=thr;
+  document.getElementById('cvMsg').innerHTML='📍 该点：log λ = <b>'+loga[pos].toFixed(2)+'</b>，CV-MSE = <b>'+mse[pos].toFixed(3)+'</b>±'+se[pos].toFixed(3)
+    +'<br>'+(within? '✅ 位于 1-SE 范围内 → 与最优解<b>统计上无显著差异</b>，可优先选更简单的模型。' : '❌ 超出 1-SE 范围 → 性能显著更差，不建议选。');
+}
+document.getElementById('cvSlider').oninput=drawCV;
+
+/* ---------- P8：Lasso / Ridge 真实路径图 ---------- */
+function drawPaths(canvasId, sliderId, posId, msgId, gridKey, pathKey, lamKey, isLasso){
+  const cv=document.getElementById(canvasId); const [ctx,W,H]=fit(cv,270);
+  const grid=DATA[gridKey], path=DATA[pathKey], names=DATA.feature_names;
+  const n=grid.length, p=names.length;
+  const pad={l:44,r:16,t:14,b:26};
+  let ymin=-2.6, ymax=2.6;
+  const [X,Y]=axes(ctx,W,H,pad,grid[0],grid[n-1],ymin,ymax,
+    [Math.ceil(grid[0]),Math.ceil(grid[0])+1,Math.ceil(grid[0])+2,Math.ceil(grid[0])+3].filter(v=>v<=grid[n-1]),[-2,-1,0,1,2]);
+  for(let j=0;j<p;j++){
+    const pts=[]; for(let i=0;i<n;i++) pts.push([X(grid[i]),Y(path[i][j])]);
+    line(ctx,pts,PALETTE[j],1.8);
+  }
+  line(ctx,[[pad.l,Y(0)],[W-pad.r,Y(0)]],'#64748b',1.2,[5,4]);
+  const idx=+document.getElementById(sliderId).value;
+  document.getElementById(posId).textContent=grid[idx].toFixed(1);
+  line(ctx,[[X(grid[idx]),pad.t],[X(grid[idx]),H-pad.b]],'#0f172a',1.4,[4,3]);
+  const alive=[]; 
+  for(let j=0;j<p;j++){
+    const v=path[idx][j];
+    if(Math.abs(v)>1e-6) alive.push([names[j],v,j]);
+    dot(ctx,X(grid[idx]),Y(v),PALETTE[j],2.6);
+  }
+  const mx=document.getElementById(msgId);
+  if(isLasso){
+    alive.sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+    mx.innerHTML='📍 log₁₀(α) = <b>'+grid[idx].toFixed(2)+'</b>：当前 <b>'+alive.length+' / '+p+'</b> 个特征非零'
+      + (alive.length? '<br>保留：'+alive.slice(0,6).map(a=>'<span style="color:'+PALETTE[a[2]]+'">●</span> '+a[0]+'='+a[1].toFixed(2)).join('，')+(alive.length>6?' …':'') : '<br>全部系数已被压为 0！');
+  }else{
+    const mxv=Math.max(...path[idx].map(Math.abs));
+    mx.innerHTML='📍 log₁₀(λ) = <b>'+grid[idx].toFixed(2)+'</b>：最大 |系数| = '+mxv.toFixed(3)+'，<b>所有 '+p+' 个系数均非零</b>（等比平滑收缩，无一触零）。';
+  }
+  // 图例（前6个）
+  ctx.font='11px sans-serif';ctx.textAlign='left';
+  names.slice(0,6).forEach((nm,j)=>{ctx.fillStyle=PALETTE[j];ctx.fillText('● '+nm,pad.l+8+j*62,pad.t-2);});
+}
+function drawLassoPath(){ drawPaths('lassoPathChart','lassoPathSlider','lpPos','lpMsg','alphas','lasso_path',null,true); }
+function drawRidgePath(){ drawPaths('ridgePathChart','ridgePathSlider','rpPos','rpMsg','ridge_lams','ridge_path',null,false); }
+document.getElementById('lassoPathSlider').oninput=drawLassoPath;
+document.getElementById('ridgePathSlider').oninput=drawRidgePath;
+
+/* ---------- 初始化 ---------- */
+if(window.hljs) hljs.highlightAll();
+go(0);
+</script>
+</body>
+</html>

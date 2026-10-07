@@ -3,8 +3,8 @@
 Dep. Variable:                  Sales   R-squared:                       0.627
 Model:                            OLS   Adj. R-squared:                  0.622
 Method:                 Least Squares   F-statistic:                     132.4
-Date:                Sat, 19 Sep 2026   Prob (F-statistic):           4.89e-82
-Time:                        18:40:45   Log-Likelihood:                -785.22
+Date:                Wed, 07 Oct 2026   Prob (F-statistic):           4.89e-82
+Time:                        18:27:29   Log-Likelihood:                -785.22
 No. Observations:                 400   AIC:                             1582.
 Df Residuals:                     394   BIC:                             1606.
 Df Model:                           5                                         

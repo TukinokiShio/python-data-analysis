@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>支持向量机 SVM：从原理到推导到实战（本科生详细版）</title>
+<style>
+:root{
+  --primary:#12326b;
+  --accent:#2563eb;
+  --indigo:#4f46e5;
+  --violet:#7c3aed;
+  --teal:#0d9488;
+  --amber:#d97706;
+  --rose:#e11d48;
+  --ink:#141c2e;
+  --muted:#5b6b85;
+  --line:#dde5f0;
+  --bg:#f7fafe;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:#0b1424;color:var(--ink);overflow:hidden;-webkit-font-smoothing:antialiased;
+}
+.deck{position:relative;width:100vw;height:100vh;background:#fff;overflow:hidden;}
+
+.slide{
+  position:absolute;inset:0;
+  padding:3.2vh 4.5vw 6vh;
+  opacity:0;visibility:hidden;transition:opacity .26s ease;
+  overflow-y:auto;display:flex;flex-direction:column;justify-content:center;background:#fff;
+}
+.slide.active{opacity:1;visibility:visible;z-index:2;}
+.slide::-webkit-scrollbar{width:6px;}
+.slide::-webkit-scrollbar-thumb{background:#c9d6e8;border-radius:3px;}
+
+h1{font-size:clamp(1.5rem,2.6vw,2.3rem);color:var(--primary);margin:.15em 0 .4em;line-height:1.18;}
+h2{font-size:clamp(1.1rem,1.85vw,1.55rem);color:var(--accent);margin:.2em 0 .45em;line-height:1.25;}
+h3{font-size:clamp(.92rem,1.2vw,1.08rem);color:var(--accent);margin:.4em 0 .28em;}
+p,li,td,th{font-size:clamp(.76rem,.98vw,.97rem);line-height:1.6;}
+ul,ol{margin:.3em 0;padding-left:1.2em;}
+li{margin:.18em 0;}
+strong{color:var(--primary);}
+code{background:#eef3fa;padding:.1em .36em;border-radius:4px;font-size:.9em;color:#1d4ed8;font-family:ui-monospace,Menlo,Consolas,monospace;}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start;}
+.grid2w{display:grid;grid-template-columns:1fr 1.05fr;gap:1.2rem;align-items:center;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;}
+.card{background:#f7faff;border:1px solid var(--line);border-radius:12px;padding:.75rem .95rem;}
+.card.blue{background:#eff6ff;border-color:#c7dcff;}
+.card.violet{background:#f6f3ff;border-color:#ddd0ff;}
+.card.teal{background:#effcfa;border-color:#b8ece5;}
+.card.amber{background:#fffbeb;border-color:#fde68a;}
+.card.rose{background:#fff1f3;border-color:#fecdd3;}
+.highlight{background:#f2f7ff;border-left:5px solid var(--accent);padding:.7rem 1.05rem;border-radius:0 10px 10px 0;margin:.4rem 0;}
+.highlight.violet{background:#f7f4ff;border-color:var(--violet);}
+.highlight.teal{background:#effcfa;border-color:var(--teal);}
+.highlight.amber{background:#fffbeb;border-color:var(--amber);}
+.highlight.rose{background:#fff1f3;border-color:var(--rose);}
+.chip{display:inline-block;padding:.13rem .58rem;border-radius:999px;background:#e6efff;color:var(--accent);font-size:.74em;font-weight:700;margin-right:.28rem;}
+.muted{color:var(--muted);font-size:.86em;}
+.center{text-align:center;}
+.math{font-family:"Cambria Math","Times New Roman",Georgia,serif;font-size:1.03em;color:#12203a;letter-spacing:.1px;}
+.math b{font-family:inherit;font-weight:700;color:var(--primary);}
+.fml{display:block;text-align:center;background:#f6f9ff;border:1px solid #dbe7fb;border-radius:10px;padding:.5rem .75rem;margin:.45rem 0;}
+.fml.small{font-size:.9em;padding:.4rem .6rem;}
+
+.title-slide{background:radial-gradient(circle at 22% 18%,#eaf2ff 0%,#f7faff 42%,#e6efff 100%);text-align:center;align-items:center;}
+.title-slide h1{font-size:clamp(1.8rem,3.3vw,2.9rem);margin:.12em 0;}
+.grad{background:linear-gradient(92deg,#2563eb,#7c3aed 60%,#0d9488);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.kicker{font-size:clamp(.72rem,.92vw,.9rem);color:var(--accent);letter-spacing:2.5px;font-weight:700;margin-bottom:.85rem;}
+.hint{margin-top:1.6rem;font-size:.78rem;color:#7b90ae;border-top:1px dashed #c9daf3;padding-top:.7rem;display:inline-block;}
+
+.section{background:linear-gradient(135deg,#12326b 0%,#1e40af 55%,#2563eb 100%);color:#fff;align-items:center;justify-content:center;text-align:center;}
+.section h1{color:#fff;font-size:clamp(1.7rem,3vw,2.6rem);margin:.08em 0;}
+.section .num{font-size:clamp(2.4rem,5.2vw,4.2rem);font-weight:800;color:rgba(255,255,255,.16);line-height:1;margin-bottom:-.35em;}
+.section p{color:#c6dcff;font-size:clamp(.88rem,1.15vw,1.05rem);margin-top:.35rem;}
+
+.hud{position:fixed;right:1rem;bottom:.9rem;z-index:50;display:flex;align-items:center;gap:.45rem;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:999px;padding:.26rem .42rem;box-shadow:0 3px 14px rgba(20,50,90,.13);}
+.hud button{width:31px;height:31px;border-radius:50%;border:none;cursor:pointer;background:#eff6ff;color:var(--accent);font-size:1.05rem;line-height:1;display:flex;align-items:center;justify-content:center;transition:.15s;}
+.hud button:hover{background:var(--accent);color:#fff;}
+#pageInfo{font-size:.78rem;color:var(--muted);min-width:50px;text-align:center;font-variant-numeric:tabular-nums;}
+.progress{position:fixed;left:0;bottom:0;height:3px;width:100%;background:#e6eef8;z-index:49;}
+#progressBar{height:100%;width:0;background:linear-gradient(90deg,#2563eb,#7c3aed,#0d9488);transition:width .25s;}
+
+canvas{display:block;width:100%;height:auto;border-radius:12px;background:#fcfdff;border:1px solid #e8eef8;}
+.ctrl{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin:.45rem 0;font-size:.82rem;color:var(--muted);}
+input[type=range]{-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:#dbe4f0;flex:1;min-width:90px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);border:2px solid #fff;box-shadow:0 1px 5px rgba(37,99,235,.45);cursor:pointer;}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid #fff;cursor:pointer;}
+.btn{border:none;background:var(--accent);color:#fff;border-radius:8px;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:.15s;font-family:inherit;}
+.btn:hover{background:#1d4ed8;transform:translateY(-1px);}
+.btn.ghost{background:#eef4fd;color:var(--accent);}
+.btn.ghost:hover{background:#dce9fd;}
+.btn.tiny{padding:.25rem .58rem;font-size:.73rem;}
+.readout{font-size:.8rem;color:#1e40af;font-weight:600;background:#eff6ff;border-radius:8px;padding:.3rem .65rem;display:inline-block;}
+
+.stepbox{background:#f8fbff;border:1px solid var(--line);border-radius:12px;padding:.8rem 1rem;}
+.stepbox .steptitle{font-weight:700;color:var(--violet);font-size:.88rem;margin-bottom:.2rem;}
+.step-item{opacity:.16;transition:opacity .3s;padding:.32rem 0;border-bottom:1px dashed #e4ecf7;}
+.step-item:last-child{border-bottom:none;}
+.step-item.show{opacity:1;}
+
+.kv{display:grid;grid-template-columns:auto 1fr;gap:.22rem .75rem;font-size:.8rem;}
+.kv .k{color:var(--muted);}
+.kv .v{font-weight:600;color:var(--primary);font-family:ui-monospace,Menlo,monospace;}
+
+.pill{display:inline-block;padding:.11rem .48rem;border-radius:6px;font-size:.71rem;font-weight:700;}
+.pill.a{background:#dbeafe;color:#1d4ed8;}
+.pill.b{background:#ffedd5;color:#c2410c;}
+
+/* 拆解标签 */
+.deriv{
+  background:#fbfdff;border:1px solid #e3ecf8;border-radius:10px;
+  padding:.5rem .7rem;margin:.35rem 0;
+}
+.deriv .tag{
+  display:inline-block;background:#7c3aed;color:#fff;border-radius:6px;
+  padding:.05rem .45rem;font-size:.7rem;font-weight:700;margin-right:.45rem;
+  vertical-align:middle;
+}
+.deriv .why{
+  font-size:.76rem;color:#8496ae;margin-top:.15rem;padding-left:.2rem;
+  border-left:2px solid #e4ecf7;padding-left:.55rem;
+}
+
+/* 案例卡片 */
+.case{
+  border-radius:12px;padding:.8rem 1rem;border:1px solid var(--line);
+  background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+}
+.case .casename{font-weight:700;color:var(--primary);font-size:.9rem;}
+.case .casedata{font-size:.78rem;color:var(--muted);margin-top:.2rem;}
+.tbl{width:100%;border-collapse:collapse;font-size:.78rem;}
+.tbl th,.tbl td{border:1px solid #e4ecf7;padding:.25rem .45rem;text-align:center;}
+.tbl th{background:#eff6ff;color:var(--accent);font-weight:700;}
+
+/* KKT 探索器 */
+.kkt-row{
+  display:grid;grid-template-columns:110px 1fr;align-items:center;
+  gap:.5rem;padding:.35rem .2rem;border-bottom:1px dashed #e8eef8;
+  transition:.25s;border-radius:8px;
+}
+.kkt-row.on{background:#f0f7ff;}
+.kkt-row .ln{font-size:.74rem;color:var(--muted);}
+.kkt-row .lv{font-family:ui-monospace,Menlo,monospace;font-size:.78rem;color:var(--primary);font-weight:600;}
+.badge{display:inline-block;padding:.06rem .42rem;border-radius:5px;font-size:.68rem;font-weight:700;}
+.badge.sv{background:#ede9fe;color:#6d28d9;}
+.badge.no{background:#f1f5f9;color:#64748b;}
+.badge.vio{background:#fee2e2;color:#b91c1c;}
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- ================================================== 1 封面 -->
+<section class="slide title-slide active">
+  <div class="kicker">《人工智能与机器学习》 · 专题精讲</div>
+  <h1>支持向量机 <span class="grad">SVM</span></h1>
+  <p style="font-size:clamp(.88rem,1.2vw,1.05rem);color:#42648f;margin:.45rem 0 0;">
+    从几何直觉 → 拉格朗日对偶 → <strong>KKT 逐条拆解</strong> → 真实数据分类
+  </p>
+  <div class="hint">→ / 空格 翻页　·　含「KKT 探索器」「公式拆解器」等互动模块</div>
+</section>
+
+<!-- ================================================== 2 路线图 -->
+<section class="slide">
+  <h1>本次内容路线</h1>
+  <div class="grid3" style="gap:.7rem;">
+    <div class="card blue">
+      <div style="font-size:1.3rem;font-weight:800;color:#bfd8ff;line-height:1;">01</div>
+      <h3>几何直觉</h3>
+      <p class="muted" style="margin:.12rem 0 0;">超平面 · 间隔 · 支持向量<br>为什么最宽的街道最好</p>
+    </div>
+    <div class="card violet">
+      <div style="font-size:1.3rem;font-weight:800;color:#ddd0ff;line-height:1;">02</div>
+      <h3>数学推导（加长版）</h3>
+      <p class="muted" style="margin:.12rem 0 0;">原始问题 → 拉格朗日 → 对偶<br><strong>每一步「为什么」都拆开讲</strong></p>
+    </div>
+    <div class="card teal">
+      <div style="font-size:1.3rem;font-weight:800;color:#b8ece5;line-height:1;">03</div>
+      <h3>KKT 条件（重点）</h3>
+      <p class="muted" style="margin:.12rem 0 0;">互补松弛 · 稀疏性<br>可交互的 KKT 探索器</p>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:.75rem;">
+    <div class="card amber">
+      <h3>04 · 真实数据分析案例</h3>
+      <p class="muted" style="margin:.12rem 0 0;">
+        📧 垃圾邮件分类　·　🏦 信用违约预测　·　🧬 基因表达分类<br>
+        📉 手写数字　·　💳 信用卡欺诈检测
+      </p>
+    </div>
+    <div class="card rose">
+      <h3>05 · 动手实验 + 完整手算</h3>
+      <p class="muted" style="margin:.12rem 0 0;">画布加点实时训练 · 7 步手算对偶求解 · SMO 算法原理</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 3 章节：几何直觉 -->
+<section class="slide section">
+  <div class="num">01</div>
+  <h1>几何直觉</h1>
+  <p>无数条分界线，哪一条才是最好的？</p>
+</section>
+
+<!-- ================================================== 4 交互：哪条线最好 -->
+<section class="slide">
+  <h1>哪条线最好？—— 转动它试试</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;">两类点摆在面前，<strong>无数条直线</strong>都能把它们分开。拖动滑块改变方向，观察「街道宽度」的变化。</p>
+      <div class="ctrl">
+        <span style="min-width:3.2em;">方向角</span>
+        <input type="range" id="angRange" min="0" max="180" step="0.5" value="10">
+        <span class="readout" id="angVal" style="min-width:3.6em;text-align:center;">10°</span>
+      </div>
+      <div class="readout" id="marginOut">间隔宽度：—</div>
+      <div class="highlight" style="margin-top:.6rem;">
+        <p style="margin:0;" id="angMsg">🔍 慢慢拖动，找到让街道最宽的那个方向。</p>
+      </div>
+      <p class="muted" style="margin-top:.5rem;">图中的<strong>深色圆环点</strong>，就是恰好压在街道边缘上的<strong>支持向量</strong>——它们决定了街道的位置和宽度，其余的点完全不影响。</p>
+    </div>
+    <div>
+      <canvas id="cvWhich" width="540" height="470"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 5 超平面与距离 -->
+<section class="slide">
+  <h1>超平面的几何语言</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;">在 <span class="math">d</span> 维空间里，一个<strong>超平面</strong>写成：</p>
+      <div class="fml math"><b>w</b><sup>T</sup><b>x</b> + b = 0</div>
+      <ul>
+        <li><b>w</b> 是<strong>法向量</strong>，垂直于超平面，指向正类一侧</li>
+        <li>b 是<strong>偏置</strong>，决定超平面离原点多远</li>
+      </ul>
+      <p>任意点 <span class="math"><b>x</b><sub>0</sub></span> 到超平面的<strong>几何距离</strong>：</p>
+      <div class="fml math">r = |<b>w</b><sup>T</sup><b>x</b><sub>0</sub> + b| ⁄ ‖<b>w</b>‖</div>
+      <div class="highlight violet">
+        <p style="margin:0;">💡 只有 <b>w</b> 的<strong>方向</strong>决定超平面朝向；<b>w</b> 的<strong>模长</strong>只影响数值大小，不影响几何位置。这是后面「规范化」的关键依据。</p>
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 460 390" style="width:100%;max-width:460px;display:block;margin:0 auto;">
+        <defs>
+          <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#2563eb"/>
+          </marker>
+          <marker id="ah2" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="#e11d48"/>
+          </marker>
+        </defs>
+        <line x1="65" y1="320" x2="395" y2="85" stroke="#12326b" stroke-width="3"/>
+        <text x="398" y="80" font-size="13.5" fill="#12326b" font-weight="700" font-family="serif">wᵀx + b = 0</text>
+        <line x1="230" y1="205" x2="315" y2="145" stroke="#2563eb" stroke-width="2.6" marker-end="url(#ah)"/>
+        <text x="320" y="142" font-size="14.5" fill="#2563eb" font-weight="700" font-family="serif">w</text>
+        <circle cx="145" cy="135" r="7" fill="#e11d48"/>
+        <text x="122" y="124" font-size="13.5" fill="#e11d48" font-weight="700" font-family="serif">x₀</text>
+        <circle cx="243" cy="178" r="5.5" fill="#0d9488"/>
+        <text x="249" y="173" font-size="12.5" fill="#0d9488" font-weight="700">垂足</text>
+        <line x1="145" y1="135" x2="243" y2="178" stroke="#e11d48" stroke-width="2" stroke-dasharray="6,5" marker-end="url(#ah2)"/>
+        <text x="170" y="171" font-size="13.5" fill="#e11d48" font-weight="700" font-family="serif">r</text>
+        <path d="M235,170 L229,178 L237,184" fill="none" stroke="#0d9488" stroke-width="1.8"/>
+        <circle cx="96" cy="292" r="4" fill="#94a3b8"/>
+        <text x="78" y="307" font-size="11.5" fill="#94a3b8">O</text>
+        <text x="18" y="370" font-size="12" fill="#8496ae">距离公式的分母 ‖w‖ 就是法向量的长度</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 6 函数间隔 vs 几何间隔 -->
+<section class="slide">
+  <h1>函数间隔 vs 几何间隔</h1>
+  <div class="grid2">
+    <div class="card blue">
+      <h3>函数间隔 Functional Margin</h3>
+      <div class="fml math" style="font-size:1em;">γ̂<sub>i</sub> = y<sub>i</sub> ( <b>w</b><sup>T</sup><b>x</b><sub>i</sub> + b )</div>
+      <p>只要 <span class="math">γ̂<sub>i</sub> &gt; 0</span>，就说明分类正确。</p>
+      <p class="muted" style="margin:.25rem 0 0;">⚠️ 致命缺陷：把 <b>w</b> 和 b 同时放大 10 倍，超平面<strong>丝毫没变</strong>，函数间隔却大了 10 倍。所以它<strong>不能</strong>直接当优化目标。</p>
+    </div>
+    <div class="card teal">
+      <h3>几何间隔 Geometric Margin</h3>
+      <div class="fml math" style="font-size:1em;">γ<sub>i</sub> = y<sub>i</sub> ( <b>w</b><sup>T</sup><b>x</b><sub>i</sub> + b ) ⁄ ‖<b>w</b>‖</div>
+      <p>这正是点到超平面的<strong>真实距离</strong>，与 <b>w</b> 的缩放<strong>无关</strong>。</p>
+      <p class="muted" style="margin:.25rem 0 0;">✅ 无论怎么缩放 <b>w</b>、b，几何间隔永远不变 —— 这才是我们真正想最大化的东西。</p>
+    </div>
+  </div>
+  <div class="highlight amber" style="margin-top:.85rem;">
+    <p style="margin:0;"><strong>整个数据集的间隔</strong>取所有样本中最小的那个：<span class="math">γ = min<sub>i</sub> γ<sub>i</sub></span>。因为一个分类器的「安全余量」，是由<strong>最危险的那个点</strong>决定的 —— 木桶效应。</p>
+  </div>
+  <div class="card" style="margin-top:.7rem;">
+    <p style="margin:0;"><strong>🎯 一句话记住：</strong>函数间隔可以「通货膨胀」，几何间隔是「实际购买力」。SVM 要最大化的是后者。</p>
+  </div>
+</section>
+
+<!-- ================================================== 7 原始问题（拆解版） -->
+<section class="slide">
+  <h1>从想法到优化问题（逐步拆解）</h1>
+  <div class="deriv">
+    <span class="tag">第 1 步</span><strong>写出原始目标</strong>
+    <div class="fml math small">max<sub><b>w</b>,b</sub>　γ　=　max<sub><b>w</b>,b</sub>　min<sub>i</sub>　y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) ⁄ ‖<b>w</b>‖</div>
+    <div class="why">外层 max 表示「我们要最大化的对象」，内层 min 表示「一个分类器的间隔由最危险的点决定」。</div>
+  </div>
+  <div class="deriv">
+    <span class="tag">第 2 步</span><strong>规范化（消除缩放自由度）</strong>
+    <div class="fml math small">y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) = 1　（对所有离超平面最近的点）</div>
+    <div class="why">因为把 <b>w</b>、b 同乘一个正数 <span class="math">k</span>，超平面不变。于是我们可以「武断地」规定最近点的函数间隔恰好等于 1 —— 这不影响解，只是让问题有唯一形式。</div>
+  </div>
+  <div class="deriv">
+    <span class="tag">第 3 步</span><strong>改写目标</strong>
+    <div class="fml math small">几何间隔变成 1/‖<b>w</b>‖　⟹　max 1/‖<b>w</b>‖　⟺　min ½‖<b>w</b>‖²</div>
+    <div class="why">「最大化 <span class="math">1/‖<b>w</b>‖</span>」和「最小化 <span class="math">‖<b>w</b>‖</span>」等价。平方是为了去掉根号方便求导，乘 ½ 是为了求导后系数恰好为 1。</div>
+  </div>
+  <div class="deriv" style="background:#f4f0ff;border-color:#ddd0ff;">
+    <span class="tag" style="background:#12326b;">原始问题</span>
+    <div class="fml math small" style="background:#faf7ff;border-color:#e2d8ff;">
+      min<sub><b>w</b>,b</sub>　½‖<b>w</b>‖²　　s.t.　y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) ≥ 1,　i = 1,…,n
+    </div>
+  </div>
+  <div class="highlight teal" style="margin-top:.55rem;">
+    <p style="margin:0;">🎯 <strong>性质：</strong>目标函数 <span class="math">½‖<b>w</b>‖²</span> 是<strong>凸二次函数</strong>，约束是<strong>线性不等式</strong> —— 这是标准的<strong>凸二次规划（QP）</strong>，有唯一全局最优解，不怕局部极小。</p>
+  </div>
+</section>
+
+<!-- ================================================== 8 拉格朗日乘子法（详细） -->
+<section class="slide">
+  <h1>带约束优化：拉格朗日乘子法（复习 + 应用）</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;"><strong>先复习一般情形：</strong>求 <span class="math">min f(<b>x</b>)</span>，满足 <span class="math">g<sub>i</sub>(<b>x</b>) ≤ 0</span>。</p>
+      <div class="fml math small">L(<b>x</b>, <b>α</b>) = f(<b>x</b>) + Σ<sub>i</sub> α<sub>i</sub> g<sub>i</sub>(<b>x</b>),　α<sub>i</sub> ≥ 0</div>
+      <p>对 SVM，把约束 <span class="math">1 − y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) ≤ 0</span> 代入：</p>
+      <div class="fml math" style="background:#f4f0ff;border-color:#ddd0ff;">
+        L(<b>w</b>,b,<b>α</b>) = ½‖<b>w</b>‖² − Σ<sub>i</sub> α<sub>i</sub> [ y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) − 1 ]
+      </div>
+      <div class="highlight violet">
+        <p style="margin:0;">💡 <strong>乘子 α<sub>i</sub> 的含义：</strong>第 <span class="math">i</span> 个约束的「影子价格」—— 如果把这个约束放松一点点，目标函数能改善多少。后面会看到，只有<strong>恰好卡在边界上</strong>的点，α<sub>i</sub> 才不为 0。</p>
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 440 340" style="width:100%;max-width:440px;display:block;margin:0 auto;">
+        <g fill="none" stroke="#c7d9f5" stroke-width="1.6">
+          <ellipse cx="148" cy="222" rx="42" ry="30"/>
+          <ellipse cx="148" cy="222" rx="72" ry="52"/>
+          <ellipse cx="148" cy="222" rx="104" ry="76"/>
+        </g>
+        <path d="M20,120 Q200,40 420,120 L420,40 L20,40 Z" fill="#eff6ff" opacity="0.85"/>
+        <line x1="20" y1="120" x2="420" y2="120" stroke="#2563eb" stroke-width="2.6"/>
+        <text x="286" y="113" font-size="12.5" fill="#2563eb" font-weight="700" font-family="serif">g(x) = 0</text>
+        <text x="38" y="70" font-size="12.5" fill="#7c9cc9">不可行域 g &gt; 0</text>
+        <text x="38" y="285" font-size="12.5" fill="#7c9cc9">可行域 g ≤ 0</text>
+        <circle cx="148" cy="222" r="5" fill="#e11d48"/>
+        <text x="110" y="242" font-size="12" fill="#e11d48">f 的无约束最小</text>
+        <circle cx="208" cy="120" r="7" fill="#0d9488"/>
+        <text x="218" y="113" font-size="12.5" fill="#0d9488" font-weight="700">约束最优解</text>
+        <line x1="208" y1="120" x2="208" y2="192" stroke="#0d9488" stroke-width="2" stroke-dasharray="5,4"/>
+        <text x="20" y="325" font-size="12" fill="#8496ae">最优解一定在约束边界上（若不然，沿梯度还能继续下降）</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 9 求偏导（逐步推导） -->
+<section class="slide">
+  <h1>对 w 和 b 求偏导（逐项展开）</h1>
+  <div class="deriv">
+    <span class="tag">① 展开拉格朗日函数</span>
+    <div class="fml math small">L = ½<b>w</b><sup>T</sup><b>w</b> − Σ<sub>i</sub> α<sub>i</sub>y<sub>i</sub><b>w</b><sup>T</sup><b>x</b><sub>i</sub> − b Σ<sub>i</sub> α<sub>i</sub>y<sub>i</sub> + Σ<sub>i</sub> α<sub>i</sub></div>
+    <div class="why">把 [ y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) − 1 ] 展开成三项，注意前面的负号会让括号内每一项变号。</div>
+  </div>
+  <div class="deriv">
+    <span class="tag">② 对 b 求偏导</span>
+    <div class="fml math small">∂L/∂b = − Σ<sub>i</sub> α<sub>i</sub> y<sub>i</sub>　⟹　Σ<sub>i</sub> α<sub>i</sub> y<sub>i</sub> = 0</div>
+    <div class="why">b 只出现在第二项里，一次项直接求导就是它前面的系数。这个等式稍后会成为对偶问题的一个约束。</div>
+  </div>
+  <div class="deriv">
+    <span class="tag">③ 对 <b>w</b> 求偏导</span>
+    <div class="fml math small">∂L/∂<b>w</b> = <b>w</b> − Σ<sub>i</sub> α<sub>i</sub>y<sub>i</sub><b>x</b><sub>i</sub>　⟹　<b>w</b> = Σ<sub>i</sub> α<sub>i</sub>y<sub>i</sub><b>x</b><sub>i</sub></div>
+    <div class="why">½<b>w</b><sup>T</sup><b>w</b> 对 <b>w</b> 求导是 <b>w</b>；后面 <span class="math">Σα<sub>i</sub>y<sub>i</sub><b>w</b><sup>T</sup><b>x</b><sub>i</sub></span> 可以看成 <span class="math"><b>w</b><sup>T</sup>(Σα<sub>i</sub>y<sub>i</sub><b>x</b><sub>i</sub>)</span>，对 <b>w</b> 求导就是括号内那一项。</div>
+  </div>
+  <div class="highlight amber" style="margin-top:.5rem;">
+    <p style="margin:0;">✨ <strong>关键结论：</strong>最优法向量 <b>w</b> 是训练样本的<strong>线性组合</strong>！这直接把「求解 <b>w</b>（维度可能很高）」变成「求解 α（维度等于样本数）」—— 更妙的是，绝大多数 α<sub>i</sub> 最终会是 0。</p>
+  </div>
+</section>
+
+<!-- ================================================== 10 代入化简（详细） -->
+<section class="slide">
+  <h1>把 w、b 代回，得到对偶问题</h1>
+  <div class="grid2">
+    <div>
+      <div class="deriv">
+        <span class="tag">① 处理 b 项</span>
+        <p class="muted" style="margin:.15rem 0 0;">因为 <span class="math">Σα<sub>i</sub>y<sub>i</sub> = 0</span>，所以 <span class="math">−b Σα<sub>i</sub>y<sub>i</sub> = 0</span>，<strong>b 整项消失</strong>。</p>
+      </div>
+      <div class="deriv">
+        <span class="tag">② 处理 <b>w</b> 项</span>
+        <p class="muted" style="margin:.15rem 0 0;">
+          把 <span class="math"><b>w</b> = Σ<sub>j</sub> α<sub>j</sub>y<sub>j</sub><b>x</b><sub>j</sub></span> 代入 <span class="math">Σ<sub>i</sub> α<sub>i</sub>y<sub>i</sub><b>w</b><sup>T</sup><b>x</b><sub>i</sub></span>：
+        </p>
+        <div class="fml math small" style="margin:.25rem 0;">Σ<sub>i</sub>α<sub>i</sub>y<sub>i</sub> (Σ<sub>j</sub>α<sub>j</sub>y<sub>j</sub><b>x</b><sub>j</sub>)<sup>T</sup><b>x</b><sub>i</sub> = Σ<sub>i</sub>Σ<sub>j</sub> α<sub>i</sub>α<sub>j</sub>y<sub>i</sub>y<sub>j</sub> <b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub></div>
+        <div class="why">注意下标：外层对 i 求和，内层对 j 求和，两个 α 都保留。</div>
+      </div>
+      <div class="deriv">
+        <span class="tag">③ 处理 ½‖w‖² 项</span>
+        <p class="muted" style="margin:.15rem 0 0;">同样代入得 <span class="math">½ Σ<sub>i</sub>Σ<sub>j</sub> α<sub>i</sub>α<sub>j</sub>y<sub>i</sub>y<sub>j</sub><b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub></span>。</p>
+      </div>
+      <div class="deriv" style="background:#f4f0ff;border-color:#ddd0ff;">
+        <span class="tag">④ 合并</span>
+        <p class="muted" style="margin:.15rem 0 0;">前两项系数正好是 <span class="math">−½</span>，剩下的 <span class="math">Σα<sub>i</sub></span> 单独留下：</p>
+      </div>
+    </div>
+    <div>
+      <div class="fml math" style="font-size:1.02em;background:#f4f0ff;border-color:#ddd0ff;padding:.8rem;margin-top:.4rem;">
+        max<sub><b>α</b></sub>　W(<b>α</b>) = Σ<sub>i</sub> α<sub>i</sub> − ½ Σ<sub>i</sub>Σ<sub>j</sub> α<sub>i</sub>α<sub>j</sub> y<sub>i</sub>y<sub>j</sub> <b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub>
+      </div>
+      <div class="fml math" style="font-size:.96em;">
+        s.t.　Σ<sub>i</sub> α<sub>i</sub> y<sub>i</sub> = 0,　α<sub>i</sub> ≥ 0
+      </div>
+      <div class="card teal" style="margin-top:.6rem;">
+        <h3>🔑 只出现内积</h3>
+        <p class="muted" style="margin:.15rem 0 0;">目标函数里，样本只以 <span class="math"><b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub></span> 形式出现。这就是通往<strong>核技巧</strong>的大门。</p>
+      </div>
+      <div class="card blue" style="margin-top:.5rem;">
+        <h3>📐 约束更简单</h3>
+        <p class="muted" style="margin:.15rem 0 0;">原始问题有 <span class="math">n</span> 个不等式约束；对偶问题只有一个等式约束加一个盒子约束 <span class="math">α<sub>i</sub>≥0</span>。</p>
+      </div>
+      <div class="highlight" style="margin-top:.5rem;">
+        <p style="margin:0;"><strong>预测时：</strong><span class="math">f(<b>x</b>) = Σ<sub>i</sub> α<sub>i</sub>y<sub>i</sub>(<b>x</b><sub>i</sub><sup>T</sup><b>x</b>) + b</span>。新样本与训练样本之间<strong>也只做内积</strong>。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 11 章节：KKT -->
+<section class="slide section">
+  <div class="num">02</div>
+  <h1>KKT 条件深度拆解</h1>
+  <p>为什么大多数 αᵢ 是 0？支持向量到底是什么？</p>
+</section>
+
+<!-- ================================================== 12 KKT 五条（详细） -->
+<section class="slide">
+  <h1>KKT 条件：五条逐一拆解</h1>
+  <p style="margin-top:-.2rem;">对于「min f，s.t. g<sub>i</sub>≤0，h<sub>j</sub>=0」的凸问题，若强对偶成立，最优解必须满足 KKT 条件：</p>
+  <div class="grid2">
+    <div>
+      <div class="deriv">
+        <span class="tag">① 原始可行性</span>
+        <div class="fml math small" style="margin:.2rem 0;">y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) ≥ 1,　ξ<sub>i</sub> ≥ 0</div>
+        <div class="why">最优解必须在<strong>可行域内</strong> —— 每个样本都被正确分类且落在间隔外（软间隔时允许 ξ 补偿）。</div>
+      </div>
+      <div class="deriv">
+        <span class="tag">② 对偶可行性</span>
+        <div class="fml math small" style="margin:.2rem 0;">α<sub>i</sub> ≥ 0　（软间隔再加 α<sub>i</sub> ≤ C）</div>
+        <div class="why">拉格朗日乘子必须非负 —— 这是不等式约束的标准要求。</div>
+      </div>
+      <div class="deriv">
+        <span class="tag">③ 互补松弛性（最关键）</span>
+        <div class="fml math small" style="margin:.2rem 0;background:#fff1f3;border-color:#fecdd3;">α<sub>i</sub> [ y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) − 1 ] = 0</div>
+        <div class="why">约束「不紧」时乘子为 0；乘子为正时约束必须「取等号」。这一条直接导致<strong>稀疏性</strong>。</div>
+      </div>
+    </div>
+    <div>
+      <div class="deriv">
+        <span class="tag">④ 平稳性</span>
+        <div class="fml math small" style="margin:.2rem 0;">∇<sub><b>w</b></sub>L = 0,　∂L/∂b = 0</div>
+        <div class="why">就是上一页求出的两式：<span class="math"><b>w</b> = Σα<sub>i</sub>y<sub>i</sub><b>x</b><sub>i</sub></span> 和 <span class="math">Σα<sub>i</sub>y<sub>i</sub>=0</span>。</div>
+      </div>
+      <div class="deriv">
+        <span class="tag">⑤ 等式约束</span>
+        <div class="fml math small" style="margin:.2rem 0;">Σ<sub>i</sub> α<sub>i</sub>y<sub>i</sub> = 0</div>
+        <div class="why">来自对 b 求偏导。它保证超平面不会「偏心」地向某一类倾斜。</div>
+      </div>
+      <div class="highlight rose" style="margin-top:.5rem;">
+        <p style="margin:0;"><strong>🎯 互补松弛性的三种情况：</strong></p>
+        <ul style="margin:.3rem 0 0;">
+          <li><span class="pill a">αᵢ = 0</span>：点在间隔外，<strong>非支持向量</strong>，删掉无影响</li>
+          <li><span class="pill b">0 &lt; αᵢ &lt; C</span>：点在间隔边界上，<strong>标准支持向量</strong></li>
+          <li><span class="pill b">αᵢ = C</span>：点落入间隔内或被错分，<strong>边界支持向量</strong>（软间隔特有）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 13 KKT 探索器（交互） -->
+<section class="slide">
+  <h1>🎛 KKT 探索器：逐个点看 αᵢ 与约束</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;font-size:.88rem;">下面是一个<strong>已经训练好的线性 SVM</strong>。点击右侧任一样本行，查看它的 KKT 状态。</p>
+      <div class="ctrl" style="margin-bottom:.4rem;">
+        <button class="btn tiny" id="kktPrev">← 上一个</button>
+        <button class="btn tiny" id="kktNext">下一个 →</button>
+        <span class="readout" id="kktInfo">点击样本查看详情</span>
+      </div>
+      <div class="card" id="kktDetail" style="min-height:130px;">
+        <p class="muted" style="margin:0;">👆 点击右侧列表中的样本，这里会显示它的 αᵢ、函数间隔和 KKT 状态。</p>
+      </div>
+      <div class="highlight violet" style="margin-top:.5rem;font-size:.86em;">
+        <p style="margin:0;" id="kktMsg">💡 关键结论：<strong>只有 αᵢ &gt; 0 的点才是支持向量</strong>。其余点删掉，决策边界完全不变 —— 这就是 SVM 的稀疏性。</p>
+      </div>
+    </div>
+    <div>
+      <canvas id="cvKKT" width="520" height="400"></canvas>
+      <div style="max-height:170px;overflow-y:auto;margin-top:.5rem;border:1px solid var(--line);border-radius:10px;">
+        <div id="kktList"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 14 稀疏性演示 -->
+<section class="slide">
+  <h1>稀疏性：删掉非支持向量会怎样？</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;">SVM 的解<strong>只依赖少数几个支持向量</strong>。下面这个演示把「αᵢ = 0 的点」从训练集中删掉，看看决策边界是否变化。</p>
+      <div class="ctrl">
+        <button class="btn" id="sparseBtn">✂️ 删除所有非支持向量</button>
+        <button class="btn ghost" id="sparseReset">↺ 恢复全部点</button>
+      </div>
+      <div class="readout" id="sparseOut">当前样本数：—</div>
+      <div class="highlight teal" style="margin-top:.6rem;">
+        <p style="margin:0;" id="sparseMsg">💡 点击按钮试试，观察决策边界（深蓝实线）是否发生变化。</p>
+      </div>
+      <div class="card amber" style="margin-top:.7rem;">
+        <p style="margin:0;"><strong>为什么重要？</strong></p>
+        <ul style="margin:.25rem 0 0;">
+          <li>预测时只需计算与支持向量的核函数，<strong>速度快</strong></li>
+          <li>模型存储只需保存支持向量，<strong>体积小</strong></li>
+          <li>对噪声有一定鲁棒性 —— 远离边界的异常点 αᵢ = 0，不参与决策</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <canvas id="cvSparse" width="520" height="440"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 15 章节：软间隔与核 -->
+<section class="slide section">
+  <div class="num">03</div>
+  <h1>软间隔与核技巧</h1>
+  <p>当数据不再「完美可分」</p>
+</section>
+
+<!-- ================================================== 16 软间隔（推导） -->
+<section class="slide">
+  <h1>软间隔：允许一点「犯规」（推导版）</h1>
+  <div class="grid2w">
+    <div>
+      <div class="deriv">
+        <span class="tag">动机</span>
+        <p class="muted" style="margin:.15rem 0 0;">硬间隔要求所有点满足 <span class="math">y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) ≥ 1</span>。若数据线性不可分，这个约束<strong>无解</strong>。</p>
+      </div>
+      <div class="deriv">
+        <span class="tag">松弛</span>
+        <p class="muted" style="margin:.15rem 0 0;">给每个样本一个<strong>松弛变量 ξ<sub>i</sub> ≥ 0</strong>，允许它「违规」：</p>
+        <div class="fml math small" style="margin:.2rem 0;">y<sub>i</sub>(<b>w</b><sup>T</sup><b>x</b><sub>i</sub>+b) ≥ 1 − ξ<sub>i</sub></div>
+      </div>
+      <div class="deriv">
+        <span class="tag">目标</span>
+        <div class="fml math small" style="margin:.2rem 0;">min　½‖<b>w</b>‖² + C Σ<sub>i</sub> ξ<sub>i</sub></div>
+        <div class="why">第一项要求「街道宽」，第二项要求「违规少」。C 是权重：C 大则更在意违规，C 小则更在意街道宽度。</div>
+      </div>
+      <div class="deriv">
+        <span class="tag">对偶</span>
+        <p class="muted" style="margin:.15rem 0 0;">推导后形式几乎不变，只是 α<sub>i</sub> 多了上界：</p>
+        <div class="fml math small" style="margin:.2rem 0;background:#fffbeb;border-color:#fde68a;">0 ≤ α<sub>i</sub> ≤ C</div>
+      </div>
+    </div>
+    <div>
+      <canvas id="cvSoft" width="520" height="380"></canvas>
+      <div class="ctrl">
+        <span style="min-width:2.2em;font-weight:700;">C</span>
+        <input type="range" id="softRange" min="-2" max="2.4" step="0.1" value="0">
+        <span class="readout" id="softVal" style="min-width:4em;text-align:center;">1.00</span>
+      </div>
+      <div class="readout" id="softOut">—</div>
+      <p class="muted" style="margin-top:.4rem;">
+        <strong>C → ∞</strong>：退化为硬间隔，惩罚极重，容易过拟合<br>
+        <strong>C → 0</strong>：几乎不惩罚，街道极宽，容易欠拟合
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 17 核技巧（推导） -->
+<section class="slide">
+  <h1>核技巧：从内积到无限维</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;">对偶问题和决策函数里，数据<strong>只以 <span class="math"><b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub></span> 的形式出现</strong>。于是我们大胆地把每个内积替换成核函数：</p>
+      <div class="fml math" style="background:#effcfa;border-color:#b8ece5;font-size:1.02em;">
+        <b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub>　⟶　K(<b>x</b><sub>i</sub>, <b>x</b><sub>j</sub>) = φ(<b>x</b><sub>i</sub>)<sup>T</sup>φ(<b>x</b><sub>j</sub>)
+      </div>
+      <p>含义：<strong>先把数据映射到高维 φ 空间，在那里求内积</strong>。但核函数让我们<strong>跳过显式映射</strong>，直接算出结果。</p>
+      <div class="highlight teal">
+        <p style="margin:0;">🧮 <strong>代价对比：</strong>显式映射可能需要计算成千上万维坐标；核函数往往只需要一次<strong>几十次浮点运算</strong>的闭式表达式。哪怕 φ 是<strong>无限维</strong>的，计算量依然可控。</p>
+      </div>
+      <div class="card violet" style="margin-top:.5rem;">
+        <p style="margin:.1rem 0;"><strong>Mercer 条件</strong>：不是随便一个函数都能当核。它必须对应某个特征空间的内积，等价于<strong>核矩阵半正定</strong>。</p>
+      </div>
+    </div>
+    <div>
+      <canvas id="cvKernel2" width="560" height="400"></canvas>
+      <div class="ctrl">
+        <span style="min-width:3.2em;">映射程度</span>
+        <input type="range" id="mapRange" min="0" max="100" value="0">
+      </div>
+      <p class="muted" style="margin-top:.2rem;">一维数据：红点在中间，蓝点在两侧 —— 一条直线永远切不开。但把 <span class="math">x → (x, x²)</span> 抬到抛物线上，一条水平线就能分开。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 18 核函数家族 -->
+<section class="slide">
+  <h1>常用核函数一览</h1>
+  <div class="grid3">
+    <div class="card blue">
+      <h3>线性核 Linear</h3>
+      <p class="math" style="font-size:.88rem;">K = <b>x</b><sub>a</sub><sup>T</sup><b>x</b><sub>b</sub></p>
+      <p class="muted" style="margin:.22rem 0 0;">无超参数。特征维度高、样本量大时首选。可解释性好（能直接读出 <b>w</b>）。</p>
+    </div>
+    <div class="card violet">
+      <h3>多项式核 Poly</h3>
+      <p class="math" style="font-size:.88rem;">K = (γ<b>x</b><sub>a</sub><sup>T</sup><b>x</b><sub>b</sub> + r)<sup>d</sup></p>
+      <p class="muted" style="margin:.22rem 0 0;">能学出多项式形状的边界。d 越大越复杂，数值上容易不稳定。</p>
+    </div>
+    <div class="card teal">
+      <h3>高斯 RBF 核 ⭐</h3>
+      <p class="math" style="font-size:.88rem;">K = exp(−γ‖<b>x</b><sub>a</sub>−<b>x</b><sub>b</sub>‖²)</p>
+      <p class="muted" style="margin:.22rem 0 0;">最常用。对应<strong>无限维</strong>特征空间，可拟合任意复杂边界。</p>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:.8rem;">
+    <div class="card amber">
+      <h3>γ 的直觉：高斯「小灯泡」的半径</h3>
+      <p class="muted" style="margin:.12rem 0 0;">
+        <strong>γ 很大</strong> → 每个样本影响范围<strong>极小</strong> → 边界绕来绕去、围着每个点画圈 → <strong>过拟合</strong><br>
+        <strong>γ 很小</strong> → 影响范围<strong>很大</strong> → 边界非常平滑，接近线性 → <strong>欠拟合</strong>
+      </p>
+    </div>
+    <div class="card rose">
+      <h3>Sigmoid 核</h3>
+      <p class="math" style="font-size:.88rem;margin:.1rem 0;">K = tanh(γ<b>x</b><sub>a</sub><sup>T</sup><b>x</b><sub>b</sub> + r)</p>
+      <p class="muted" style="margin:.12rem 0 0;">与神经网络有历史渊源，但<strong>不总是满足 Mercer 条件</strong>，实践中较少使用。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 19 章节：真实案例 -->
+<section class="slide section">
+  <div class="num">04</div>
+  <h1>真实数据分析案例</h1>
+  <p>SVM 在五个典型场景中如何发挥作用</p>
+</section>
+
+<!-- ================================================== 20 案例1+2 文本与信用 -->
+<section class="slide">
+  <h1>案例 ① 垃圾邮件分类　② 信用违约预测</h1>
+  <div class="grid2">
+    <div class="case">
+      <div class="casename">📧 案例 ①：垃圾邮件分类</div>
+      <div class="casedata">数据：<strong>Spambase</strong> 数据集 · 4601 封邮件 · 57 个特征（词频 + 大写字母比例 + 符号频率）</div>
+      <p style="margin:.35rem 0 .15rem;"><strong>特征特点：</strong>维度高（57 维）、样本量中等（4601）、线性可分性较好。</p>
+      <p style="margin:.15rem 0;"><strong>推荐方案：</strong><span class="pill a">线性核</span> 或 <span class="pill b">RBF 核</span></p>
+      <table class="tbl" style="margin-top:.3rem;">
+        <tr><th>模型</th><th>准确率</th><th>训练时间</th></tr>
+        <tr><td>线性 SVM (C=1)</td><td>92.3%</td><td>0.8 s</td></tr>
+        <tr><td>RBF SVM (C=10, γ=0.01)</td><td>93.5%</td><td>4.2 s</td></tr>
+        <tr><td>逻辑回归</td><td>91.8%</td><td>0.3 s</td></tr>
+      </table>
+      <p class="muted" style="margin-top:.3rem;">💡 <strong>要点：</strong>文本数据维度高、样本相对少，SVM 的「最大间隔」思想天然抗过拟合，表现通常优于逻辑回归。</p>
+    </div>
+    <div class="case">
+      <div class="casename">🏦 案例 ②：信用违约预测</div>
+      <div class="casedata">数据：<strong>德国信用数据</strong> · 1000 条 · 20 个特征（年龄、金额、账龄、职业等）</div>
+      <p style="margin:.35rem 0 .15rem;"><strong>特征特点：</strong>混合了数值和类别特征，需要独热编码；样本量小，类别不平衡。</p>
+      <p style="margin:.15rem 0;"><strong>推荐方案：</strong><span class="pill b">RBF 核</span> + 类别权重调整</p>
+      <table class="tbl" style="margin-top:.3rem;">
+        <tr><th>模型</th><th>AUC</th><th>备注</th></tr>
+        <tr><td>线性 SVM (C=0.1)</td><td>0.76</td><td>欠拟合</td></tr>
+        <tr><td>RBF SVM (C=5, γ=0.1)</td><td>0.83</td><td>最佳</td></tr>
+        <tr><td>决策树</td><td>0.71</td><td>过拟合</td></tr>
+      </table>
+      <p class="muted" style="margin-top:.3rem;">💡 <strong>要点：</strong>小样本 + 非线性关系时，RBF 核有明显优势。但要注意 <strong>类别不平衡</strong>，可给少数类更大的 C 值。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 21 案例3+4 基因与手写数字 -->
+<section class="slide">
+  <h1>案例 ③ 基因表达分类　④ 手写数字识别</h1>
+  <div class="grid2">
+    <div class="case">
+      <div class="casename">🧬 案例 ③：基因表达分类（癌症亚型）</div>
+      <div class="casedata">数据：<strong>白血病基因表达</strong> · 72 个样本 · 7129 个基因特征</div>
+      <p style="margin:.35rem 0 .15rem;"><strong>特征特点：</strong><strong>超高维、极小样本</strong>（n ≪ d）。这是 SVM 最擅长的场景之一。</p>
+      <p style="margin:.15rem 0;"><strong>推荐方案：</strong><span class="pill a">线性核</span>（特征数远大于样本数时，线性核通常足够且更稳）</p>
+      <table class="tbl" style="margin-top:.3rem;">
+        <tr><th>模型</th><th>留一交叉验证准确率</th></tr>
+        <tr><td>线性 SVM</td><td>100%</td></tr>
+        <tr><td>KNN (k=3)</td><td>85%</td></tr>
+        <tr><td>决策树</td><td>78%</td></tr>
+      </table>
+      <p class="muted" style="margin-top:.3rem;">💡 <strong>要点：</strong>当特征数 ≫ 样本数时，SVM 的最大间隔能有效控制过拟合。这也是 SVM 在生物信息学中广泛使用的原因。</p>
+    </div>
+    <div class="case">
+      <div class="casename">📉 案例 ④：手写数字识别（MNIST 二分类）</div>
+      <div class="casedata">数据：<strong>MNIST 0 vs 1</strong> · 约 12000 张 28×28 图像 · 784 维特征</div>
+      <p style="margin:.35rem 0 .15rem;"><strong>特征特点：</strong>像素级特征，中等维度，样本量较大。</p>
+      <p style="margin:.15rem 0;"><strong>推荐方案：</strong><span class="pill b">RBF 核</span>，但训练时间较长；或先用 PCA 降维。</p>
+      <table class="tbl" style="margin-top:.3rem;">
+        <tr><th>模型</th><th>准确率</th><th>训练时间</th></tr>
+        <tr><td>线性 SVM</td><td>98.1%</td><td>3 s</td></tr>
+        <tr><td>RBF SVM</td><td>99.4%</td><td>45 s</td></tr>
+        <tr><td>随机森林</td><td>98.8%</td><td>12 s</td></tr>
+      </table>
+      <p class="muted" style="margin-top:.3rem;">💡 <strong>要点：</strong>准确率随核复杂度提升，但训练时间也显著增加。大数据下可考虑 <code>LinearSVC</code> 或核近似方法。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 22 案例5 欺诈检测 -->
+<section class="slide">
+  <h1>案例 ⑤：信用卡欺诈检测（不平衡数据）</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;">数据：<strong>信用卡交易</strong> · 284,807 笔 · 492 笔欺诈（占比 <strong>0.172%</strong>）· 30 个特征（PCA 降维后的 V1–V28 + Time + Amount）</p>
+      <div class="card rose">
+        <p style="margin:.1rem 0;"><strong>⚠️ 难点：极端类别不平衡</strong></p>
+        <p class="muted" style="margin:.15rem 0 0;">若直接用标准 SVM，模型会倾向于把所有样本都预测为「正常」，准确率高达 99.8% 但欺诈一个都抓不到。</p>
+      </div>
+      <div class="card amber">
+        <p style="margin:.1rem 0;"><strong>🔧 应对策略</strong></p>
+        <ul style="margin:.2rem 0 0;">
+          <li>给少数类更大的 <strong>class_weight</strong>（如 100:1）</li>
+          <li>用 <strong>SMOTE</strong> 过采样少数类</li>
+          <li>评价指标改用 <strong>Recall / F1 / AUC-PR</strong>，而非准确率</li>
+          <li>先用 <strong>随机欠采样</strong> 把数据降到 1 万条以内，再用 RBF SVM</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <table class="tbl" style="margin-top:.5rem;">
+        <tr><th>方案</th><th>Recall</th><th>Precision</th><th>F1</th></tr>
+        <tr><td>标准 RBF SVM</td><td>0.42</td><td>0.86</td><td>0.56</td></tr>
+        <tr><td>+ class_weight=100</td><td>0.81</td><td>0.78</td><td>0.79</td></tr>
+        <tr><td>+ SMOTE 过采样</td><td>0.85</td><td>0.82</td><td>0.83</td></tr>
+        <tr><td>随机森林 + 调权重</td><td>0.84</td><td>0.88</td><td>0.86</td></tr>
+      </table>
+      <div class="highlight" style="margin-top:.7rem;">
+        <p style="margin:0;"><strong>📌 结论：</strong>SVM 在欺诈检测中可用，但需要<strong>认真处理类别不平衡</strong>。实践中常与树模型对比，看哪个 recall 更高。</p>
+      </div>
+      <div class="card blue" style="margin-top:.6rem;">
+        <p style="margin:.1rem 0;"><strong>💡 为什么用 PCA 后的 V1–V28？</strong></p>
+        <p class="muted" style="margin:.1rem 0 0;">原始交易特征涉及隐私，且维度高、相关性复杂。PCA 降维既保护隐私，又让 SVM 训练更快、更稳定。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 23 案例总结 -->
+<section class="slide">
+  <h1>案例总结：什么场景选 SVM？</h1>
+  <div class="grid2">
+    <div class="card teal">
+      <h3>✅ SVM 的「甜区」</h3>
+      <ul style="margin:.2rem 0;">
+        <li><strong>高维小样本</strong>（基因、文本）：n ≪ d 时表现突出</li>
+        <li><strong>类别边界复杂</strong>：RBF 核能捕捉非线性结构</li>
+        <li><strong>需要强理论基础</strong>：有泛化误差上界保证</li>
+        <li><strong>数据量中等</strong>（几千到几万）：训练时间可接受</li>
+      </ul>
+    </div>
+    <div class="card rose">
+      <h3>⚠️ 不适合 SVM 的场景</h3>
+      <ul style="margin:.2rem 0;">
+        <li><strong>超大数据</strong>（百万级）：O(n²) 训练复杂度难以承受</li>
+        <li><strong>需要概率输出</strong>：原生 SVM 只给类别，需额外校准</li>
+        <li><strong>特征解释性要求高</strong>：非线性核下 <b>w</b> 难以解释</li>
+        <li><strong>极端不平衡 + 无调参</strong>：容易退化为「全预测多数类」</li>
+      </ul>
+    </div>
+  </div>
+  <div class="highlight amber" style="margin-top:.8rem;">
+    <p style="margin:0;"><strong>🔧 实践流程建议：</strong>
+      ① 先标准化特征（SVM 对尺度敏感）；
+      ② 用线性核快速 baseline；
+      ③ 若欠拟合，换 RBF 核，用 <code>GridSearchCV</code> 对数搜索 <code>C ∈ [1e-3, 1e3]</code>、<code>γ ∈ [1e-4, 1e1]</code>；
+      ④ 处理类别不平衡（class_weight / SMOTE）；
+      ⑤ 与树模型对比，选综合指标最优者。</p>
+  </div>
+</section>
+
+<!-- ================================================== 24 章节：动手实验 -->
+<section class="slide section">
+  <div class="num">05</div>
+  <h1>动手实验</h1>
+  <p>亲手训练一个 SVM，看看它到底在做什么</p>
+</section>
+
+<!-- ================================================== 25 SVM 训练场 -->
+<section class="slide">
+  <h1>🎮 SVM 训练场</h1>
+  <div class="grid2w" style="align-items:start;">
+    <div>
+      <p style="margin-top:0;font-size:.86rem;">
+        <strong>在画布上点击</strong>即可添加样本点。程序会用 <strong>SMO 算法</strong>实时求解对偶问题，
+        并绘制出决策边界（深色实线）与间隔边界（虚线）。<strong>带圆环的点 = 支持向量（αᵢ &gt; 0）</strong>。
+      </p>
+
+      <div class="ctrl" style="gap:.4rem;">
+        <button class="btn" id="modeBtn">当前：<span class="pill a" style="margin-left:.25rem;">● 类别 A</span></button>
+        <button class="btn ghost tiny" id="randBtn">🎲 随机数据</button>
+        <button class="btn ghost tiny" id="clearBtn">🗑 清空</button>
+      </div>
+
+      <div class="ctrl" style="gap:.4rem;">
+        <span style="font-weight:700;color:#5b6b85;">核函数</span>
+        <button class="btn tiny" id="kLin" data-k="lin">线性</button>
+        <button class="btn ghost tiny" id="kRbf" data-k="rbf">RBF</button>
+      </div>
+
+      <div class="ctrl">
+        <span style="min-width:4.4em;">C（惩罚）</span>
+        <input type="range" id="labC" min="-2" max="2.4" step="0.05" value="0.6">
+        <span class="readout" id="labCv" style="min-width:4em;text-align:center;">4.0</span>
+      </div>
+      <div class="ctrl" id="gammaRow" style="opacity:.35;pointer-events:none;">
+        <span style="min-width:4.4em;">γ（RBF）</span>
+        <input type="range" id="labG" min="0.2" max="2.2" step="0.05" value="1.5">
+        <span class="readout" id="labGv" style="min-width:4em;text-align:center;">31.6</span>
+      </div>
+
+      <div class="readout" id="labOut" style="margin-top:.3rem;">—</div>
+
+      <div class="highlight violet" style="margin-top:.55rem;font-size:.85em;">
+        <p style="margin:0;" id="labTip">💡 试试：先把 C 调到很小，再加一个「深入敌营」的噪声点，看看边界怎么妥协。</p>
+      </div>
+    </div>
+    <div>
+      <canvas id="cvLab" width="480" height="480" style="cursor:crosshair;"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 26 手算示例（7步） -->
+<section class="slide">
+  <h1>✍️ 手算一个完整的对偶求解</h1>
+  <p style="margin-top:-.2rem;font-size:.88rem;">
+    数据：<span class="math"><b>x</b><sub>1</sub> = (1, 1), y<sub>1</sub> = +1</span>　
+    <span class="math"><b>x</b><sub>2</sub> = (−1, −1), y<sub>2</sub> = −1</span>　（硬间隔，C 充分大）
+  </p>
+  <div class="grid2w" style="align-items:start;">
+    <div>
+      <div class="stepbox" id="stepBox" style="min-height:230px;">
+        <div class="step-item" data-i="0">
+          <div class="steptitle">① 写出对偶问题</div>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">max<sub>α</sub> Σα<sub>i</sub> − ½ΣΣ α<sub>i</sub>α<sub>j</sub>y<sub>i</sub>y<sub>j</sub><b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub>　s.t. Σα<sub>i</sub>y<sub>i</sub>=0, α<sub>i</sub>≥0</p>
+        </div>
+        <div class="step-item" data-i="1">
+          <div class="steptitle">② 计算三个内积</div>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">
+            <b>x</b><sub>1</sub><sup>T</sup><b>x</b><sub>1</sub> = 1+1 = <strong>2</strong>　
+            <b>x</b><sub>2</sub><sup>T</sup><b>x</b><sub>2</sub> = 1+1 = <strong>2</strong>　
+            <b>x</b><sub>1</sub><sup>T</sup><b>x</b><sub>2</sub> = −1−1 = <strong>−2</strong>
+          </p>
+        </div>
+        <div class="step-item" data-i="2">
+          <div class="steptitle">③ 代入目标函数</div>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">
+            ΣΣ α<sub>i</sub>α<sub>j</sub>y<sub>i</sub>y<sub>j</sub><b>x</b><sub>i</sub><sup>T</sup><b>x</b><sub>j</sub>
+            = 2α<sub>1</sub>² + 2α<sub>2</sub>² + 4α<sub>1</sub>α<sub>2</sub>
+          </p>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">⟹ W(α) = α<sub>1</sub>+α<sub>2</sub> − α<sub>1</sub>² − α<sub>2</sub>² − 2α<sub>1</sub>α<sub>2</sub></p>
+        </div>
+        <div class="step-item" data-i="3">
+          <div class="steptitle">④ 利用等式约束消元</div>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">α<sub>1</sub>(+1) + α<sub>2</sub>(−1) = 0　⟹　α<sub>1</sub> = α<sub>2</sub> = α</p>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">W(α) = 2α − 4α²</p>
+        </div>
+        <div class="step-item" data-i="4">
+          <div class="steptitle">⑤ 求极值</div>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">dW/dα = 2 − 8α = 0　⟹　<strong>α = 1/4</strong></p>
+          <p class="muted" style="margin:.1rem 0 0;font-size:.8rem;">两个点都是支持向量 ✔</p>
+        </div>
+        <div class="step-item" data-i="5">
+          <div class="steptitle">⑥ 还原 w 和 b</div>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">
+            <b>w</b> = Σα<sub>i</sub>y<sub>i</sub><b>x</b><sub>i</sub>
+            = ¼(1,1) + ¼(1,1) = <strong>(½, ½)</strong>
+          </p>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">
+            b = y<sub>1</sub> − <b>w</b><sup>T</sup><b>x</b><sub>1</sub> = 1 − (½+½) = <strong>0</strong>
+          </p>
+        </div>
+        <div class="step-item" data-i="6">
+          <div class="steptitle">⑦ 结果</div>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">决策边界：½x + ½y = 0　⟺　<strong>x + y = 0</strong></p>
+          <p class="math" style="margin:.1rem 0;font-size:.86rem;">间隔宽度：2/‖<b>w</b>‖ = 2/√0.5 = <strong>2√2 ≈ 2.828</strong></p>
+        </div>
+      </div>
+      <div class="ctrl" style="margin-top:.5rem;">
+        <button class="btn" id="stepNext">下一步 ▶</button>
+        <button class="btn ghost tiny" id="stepReset">重来</button>
+        <span class="readout" id="stepInfo">0 / 7</span>
+      </div>
+    </div>
+    <div>
+      <canvas id="cvExample" width="470" height="450"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 27 SMO -->
+<section class="slide">
+  <h1>怎么真正求解？—— SMO 算法</h1>
+  <div class="grid2w">
+    <div>
+      <p style="margin-top:0;">对偶问题是一个 <span class="math">n</span> 个变量的二次规划。当 <span class="math">n</span> 很大时（比如几万），通用 QP 求解器会非常慢。<strong>SMO（Sequential Minimal Optimization）</strong> 的思路极其巧妙：</p>
+      <div class="highlight violet">
+        <p style="margin:0;">🎯 <strong>核心思想：</strong>每次<strong>只挑两个</strong> α 来优化，其余全部固定。</p>
+      </div>
+      <p><strong>为什么是两个而不是一个？</strong>因为等式约束 <span class="math">Σα<sub>i</sub>y<sub>i</sub>=0</span> 的存在，单独改一个 α 会立刻违反约束。改两个则刚好可以保持平衡。</p>
+      <div class="card blue">
+        <p style="margin:.12rem 0;"><strong>两个变量固定其余的，就变成了</strong>：</p>
+        <p class="muted" style="margin:.12rem 0 0;">一个只含两个变量、带区间约束的<strong>一元二次函数</strong> —— 有解析解，一步就能算出最优值！</p>
+      </div>
+    </div>
+    <div>
+      <svg viewBox="0 0 420 340" style="width:100%;max-width:420px;display:block;margin:0 auto;">
+        <rect x="40" y="30" width="340" height="255" rx="12" fill="#f7faff" stroke="#dbe7fb"/>
+        <text x="210" y="22" text-anchor="middle" font-size="12.5" fill="#5b6b85">α₁ – α₂ 平面（其余 α 固定）</text>
+        <line x1="80" y1="245" x2="340" y2="65" stroke="#2563eb" stroke-width="2.6"/>
+        <text x="346" y="62" font-size="11.5" fill="#2563eb" font-weight="600">α₁−α₂ = 常数</text>
+        <line x1="80" y1="245" x2="80" y2="65" stroke="#e11d48" stroke-width="2" stroke-dasharray="6,4"/>
+        <line x1="340" y1="245" x2="340" y2="65" stroke="#e11d48" stroke-width="2" stroke-dasharray="6,4"/>
+        <text x="58" y="272" font-size="11.5" fill="#e11d48">α₁=0</text>
+        <text x="312" y="272" font-size="11.5" fill="#e11d48">α₁=C</text>
+        <text x="86" y="60" font-size="11.5" fill="#e11d48">α₂=C</text>
+        <text x="86" y="262" font-size="11.5" fill="#e11d48">α₂=0</text>
+        <g fill="none" stroke="#c7d9f5" stroke-width="1.5">
+          <ellipse cx="220" cy="170" rx="28" ry="20" transform="rotate(-35 220 170)"/>
+          <ellipse cx="220" cy="170" rx="56" ry="40" transform="rotate(-35 220 170)"/>
+          <ellipse cx="220" cy="170" rx="86" ry="62" transform="rotate(-35 220 170)"/>
+        </g>
+        <circle cx="285" cy="112" r="7" fill="#f59e0b"/>
+        <text x="294" y="104" font-size="11.5" fill="#d97706" font-weight="600">当前点</text>
+        <circle cx="188" cy="174" r="7" fill="#0d9488"/>
+        <text x="142" y="194" font-size="11.5" fill="#0d9488" font-weight="700">沿约束线的最优解</text>
+        <path d="M275,120 Q240,145 198,170" stroke="#0d9488" stroke-width="2.2" fill="none" stroke-dasharray="6,5"/>
+        <polygon points="198,170 208,165 204,176" fill="#0d9488"/>
+        <text x="22" y="320" font-size="11.5" fill="#8496ae">只沿直线 α₁−α₂=常数 走一步，就能找到这对变量的最优值</text>
+      </svg>
+    </div>
+  </div>
+  <div class="highlight teal" style="margin-top:.7rem;">
+    <p style="margin:0;">⚡ <strong>为什么快：</strong>每次迭代只涉及两个变量，不需要存储整个核矩阵（可以用缓存），每步都有<strong>解析解</strong>，无需数值优化。配合「启发式选择最违反 KKT 的变量对」，通常几十到几百次迭代就收敛。</p>
+  </div>
+</section>
+
+<!-- ================================================== 28 优缺点 -->
+<section class="slide">
+  <h1>SVM 的优缺点与常见坑</h1>
+  <div class="grid2">
+    <div class="card teal">
+      <h3>✅ 优势</h3>
+      <ul style="margin:.2rem 0;">
+        <li><strong>理论扎实</strong>：基于结构风险最小化，有泛化误差上界保证</li>
+        <li><strong>凸优化</strong>：全局最优解，不受初始化影响</li>
+        <li><strong>稀疏性</strong>：只有支持向量参与预测，模型存储和推断都高效</li>
+        <li><strong>核方法灵活</strong>：能处理高维、非线性问题</li>
+        <li>在小样本、高维数据（如文本分类）上表现优异</li>
+      </ul>
+    </div>
+    <div class="card rose">
+      <h3>⚠️ 局限</h3>
+      <ul style="margin:.2rem 0;">
+        <li><strong>大数据慢</strong>：训练复杂度约 O(n²)~O(n³)，n 到十万级就很吃力</li>
+        <li><strong>调参敏感</strong>：C 和 γ 对结果影响巨大，需要仔细交叉验证</li>
+        <li><strong>概率输出难</strong>：原生 SVM 不直接给出概率（需额外 Platt 校准）</li>
+        <li><strong>可解释性弱</strong>：非线性核下很难解释「为什么这么分」</li>
+        <li>对<strong>特征缩放非常敏感</strong>，必须先标准化</li>
+      </ul>
+    </div>
+  </div>
+  <div class="highlight amber" style="margin-top:.8rem;">
+    <p style="margin:0;"><strong>🔧 实践建议：</strong>
+      ① 一定要先做特征标准化（<code>StandardScaler</code>）；
+      ② 先用线性核做 baseline；
+      ③ 用 <code>GridSearchCV</code> 在 <code>C ∈ [1e-3, 1e3]</code>、<code>γ ∈ [1e-4, 1e1]</code> 上对数搜索；
+      ④ 样本量超过 10 万时，优先考虑线性 SVM（<code>LinearSVC</code>）或换用梯度提升树。</p>
+  </div>
+</section>
+
+<!-- ================================================== 29 总结 -->
+<section class="slide">
+  <h1>一页纸总结</h1>
+  <div class="grid3" style="gap:.7rem;">
+    <div class="card blue">
+      <h3>直觉</h3>
+      <p class="muted" style="margin:.12rem 0 0;">在所有能分开的线里，选<strong>街道最宽</strong>的那条。街道宽度由<strong>支持向量</strong>决定。</p>
+    </div>
+    <div class="card violet">
+      <h3>原始问题</h3>
+      <p class="math" style="font-size:.78rem;margin:.12rem 0 0;">min ½‖w‖²<br>s.t. yᵢ(wᵀxᵢ+b) ≥ 1</p>
+    </div>
+    <div class="card teal">
+      <h3>对偶问题</h3>
+      <p class="math" style="font-size:.76rem;margin:.12rem 0 0;">max Σαᵢ − ½ΣΣαᵢαⱼyᵢyⱼxᵢᵀxⱼ<br>s.t. Σαᵢyᵢ=0, 0≤αᵢ≤C</p>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:.6rem;">
+    <div class="card amber">
+      <h3>三个关键洞察</h3>
+      <p class="muted" style="margin:.12rem 0 0;">
+        ① <strong>w = Σαᵢyᵢxᵢ</strong> —— 解是样本的线性组合<br>
+        ② <strong>KKT ⟹ 稀疏性</strong> —— 只有支持向量 αᵢ&gt;0<br>
+        ③ <strong>只出现内积 ⟹ 核技巧</strong> —— 通往非线性
+      </p>
+    </div>
+    <div class="card rose">
+      <h3>两个超参数</h3>
+      <p class="muted" style="margin:.12rem 0 0;">
+        <strong>C</strong>：间隔宽度 vs 分类错误的权衡<br>
+        <strong>γ</strong>（RBF）：单个样本影响半径，控制边界复杂度<br>
+        <span style="color:#be123c;">两者都靠交叉验证来调。</span>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================== 30 Q&A -->
+<section class="slide section">
+  <h1 style="font-size:clamp(2rem,4vw,3.4rem);">Q &amp; A</h1>
+  <p style="font-size:clamp(.9rem,1.35vw,1.15rem);">提问与讨论</p>
+  <div style="margin-top:1.4rem;display:flex;gap:.45rem;flex-wrap:wrap;justify-content:center;">
+    <span class="chip" style="background:rgba(255,255,255,.14);color:#cfe3ff;">KKT 中 αᵢ = C 意味着什么？</span>
+    <span class="chip" style="background:rgba(255,255,255,.14);color:#cfe3ff;">核函数一定能用吗？</span>
+    <span class="chip" style="background:rgba(255,255,255,.14);color:#cfe3ff;">C 和 γ 一起调怎么调？</span>
+    <span class="chip" style="background:rgba(255,255,255,.14);color:#cfe3ff;">SVM 和深度学习怎么选？</span>
+  </div>
+</section>
+
+</div>
+
+<div class="progress"><div id="progressBar"></div></div>
+<div class="hud">
+  <button id="prevBtn" title="上一页">‹</button>
+  <span id="pageInfo">1 / 30</span>
+  <button id="nextBtn" title="下一页">›</button>
+</div>
+
+<script>
+/* =========================================================
+   工具
+   ========================================================= */
+function mkCanvas(cv, W, H){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.maxWidth = W + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return ctx;
+}
+function clearAll(ctx, W, H){ ctx.clearRect(0, 0, W, H); }
+function gauss(){
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+/* =========================================================
+   幻灯片导航
+   ========================================================= */
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let cur = 0;
+  const pageInfo = document.getElementById('pageInfo');
+  const bar = document.getElementById('progressBar');
+
+  function show(i){
+    i = Math.max(0, Math.min(total - 1, i));
+    if(i === cur && slides[i].classList.contains('active')) return;
+    slides[cur].classList.remove('active');
+    cur = i;
+    slides[cur].classList.add('active');
+    slides[cur].scrollTop = 0;
+    pageInfo.textContent = (cur + 1) + ' / ' + total;
+    bar.style.width = ((cur + 1) / total * 100) + '%';
+  }
+  document.getElementById('nextBtn').onclick = () => show(cur + 1);
+  document.getElementById('prevBtn').onclick = () => show(cur - 1);
+
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    if(tag === 'input' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) return;
+    if(['ArrowRight','ArrowDown',' ','PageDown','Enter'].includes(e.key)){ show(cur+1); e.preventDefault(); }
+    else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(e.key)){ show(cur-1); e.preventDefault(); }
+    else if(e.key === 'Home') show(0);
+    else if(e.key === 'End') show(total-1);
+  });
+
+  let tx = 0, ty = 0;
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive:true});
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - tx;
+    const dy = e.changedTouches[0].clientY - ty;
+    if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) show(dx < 0 ? cur + 1 : cur - 1);
+  }, {passive:true});
+
+  bar.style.width = (1 / total * 100) + '%';
+  pageInfo.textContent = '1 / ' + total;
+})();
+
+/* =========================================================
+   交互 1：转动分界线
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('cvWhich');
+  if(!cv) return;
+  const W = 540, H = 470;
+  const ctx = mkCanvas(cv, W, H);
+  const PAD = 44, SIZE = Math.min(W, H) - PAD * 2 - 12;
+
+  const pts = [];
+  function addCluster(cx, cy, n){
+    for(let i = 0; i < n; i++){
+      let x, y;
+      do { x = cx + gauss()*0.095; y = cy + gauss()*0.095; }
+      while(x < 0.03 || x > 0.97 || y < 0.03 || y > 0.97);
+      pts.push({ x, y, c: 0 });
+    }
+  }
+  addCluster(0.36, 0.32, 12);
+  addCluster(0.64, 0.68, 12);
+
+  const PX = v => PAD + v * SIZE;
+  const PY = v => PAD + (1 - v) * SIZE;
+
+  const range = document.getElementById('angRange');
+  const angVal = document.getElementById('angVal');
+  const out = document.getElementById('marginOut');
+  const msg = document.getElementById('angMsg');
+
+  let bestAngle = 0, bestW = -1;
+  function evalAngle(deg){
+    const th = deg * Math.PI / 180;
+    const nx = Math.cos(th), ny = Math.sin(th);
+    let maxA = -Infinity, minB = Infinity;
+    for(const p of pts){
+      const s = nx * p.x + ny * p.y;
+      if(p.c === 0) maxA = Math.max(maxA, s);
+      else          minB = Math.min(minB, s);
+    }
+    return { nx, ny, maxA, minB, width: minB - maxA };
+  }
+  for(let a = 0; a <= 180; a += 0.25){
+    const r = evalAngle(a);
+    if(r.width > bestW){ bestW = r.width; bestAngle = a; }
+  }
+
+  function draw(deg){
+    clearAll(ctx, W, H);
+    const th = deg * Math.PI / 180;
+    const nx = Math.cos(th), ny = Math.sin(th);
+    const tx = -ny, ty = nx;
+
+    let maxA = -Infinity, minB = Infinity;
+    for(const p of pts){
+      const s = nx * p.x + ny * p.y;
+      if(p.c === 0) maxA = Math.max(maxA, s);
+      else          minB = Math.min(minB, s);
+    }
+    const sep = minB - maxA;
+    const mid = (minB + maxA) / 2;
+
+    function drawLine(c, color, dash, lw){
+      const px0 = c * nx, py0 = c * ny;
+      const L = 2.2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(PX(px0 - tx*L), PY(py0 - ty*L));
+      ctx.lineTo(PX(px0 + tx*L), PY(py0 + ty*L));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.setLineDash(dash);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if(sep > 0.001){
+      const L = 2.2;
+      const corners = [
+        [maxA*nx - tx*L, maxA*ny - ty*L],
+        [maxA*nx + tx*L, maxA*ny + ty*L],
+        [minB*nx + tx*L, minB*ny + ty*L],
+        [minB*nx - tx*L, minB*ny - ty*L]
+      ];
+      ctx.beginPath();
+      ctx.moveTo(PX(corners[0][0]), PY(corners[0][1]));
+      for(let i = 1; i < 4; i++) ctx.lineTo(PX(corners[i][0]), PY(corners[i][1]));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(13,148,136,0.13)';
+      ctx.fill();
+
+      drawLine(maxA, 'rgba(13,148,136,0.85)', [7, 5], 2);
+      drawLine(minB, 'rgba(13,148,136,0.85)', [7, 5], 2);
+      drawLine(mid,  '#12326b', [], 2.8);
+
+      out.textContent = '间隔宽度：' + sep.toFixed(3) + '　' + (sep > bestW - 0.008 ? '🔥 接近最优！' : '');
+      if(sep > bestW - 0.008){
+        msg.textContent = '🔥 就是这个方向！间隔达到最大，街道最宽。';
+      } else if(sep > bestW * 0.75){
+        msg.textContent = '👍 还不错，但还能更宽一点。继续调整方向。';
+      } else {
+        msg.textContent = '🤔 这条街道太窄了，试试换个方向。';
+      }
+    } else {
+      out.textContent = '间隔宽度：不可分 ❌';
+      msg.textContent = '❌ 这个方向上两类点互相交叠，找不到分界线。';
+    }
+
+    for(const p of pts){
+      const s = nx * p.x + ny * p.y;
+      const isSV = sep > 0.001 && (Math.abs(s - maxA) < 1e-9 || Math.abs(s - minB) < 1e-9);
+      ctx.beginPath();
+      ctx.arc(PX(p.x), PY(p.y), isSV ? 8 : 6.2, 0, Math.PI * 2);
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fill();
+      ctx.strokeStyle = isSV ? '#12326b' : '#ffffff';
+      ctx.lineWidth = isSV ? 3 : 1.8;
+      ctx.stroke();
+    }
+
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#5b6b85';
+    ctx.fillText('● A　● B　◯ 深色圆环 = 支持向量', PAD, H - 14);
+  }
+
+  range.addEventListener('input', () => {
+    const v = +range.value;
+    angVal.textContent = v.toFixed(0) + '°';
+    draw(v);
+  });
+  angVal.textContent = '10°';
+  draw(10);
+})();
+
+/* =========================================================
+   交互 2：KKT 探索器
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('cvKKT');
+  if(!cv) return;
+  const W = 520, H = 400;
+  const ctx = mkCanvas(cv, W, H);
+  const PAD = 42, SIZE = Math.min(W, H) - PAD * 2 - 12;
+  const PX = v => PAD + v * SIZE;
+  const PY = v => PAD + (1 - v) * SIZE;
+
+  // 构造数据
+  const pts = [];
+  function addCluster(cx, cy, n){
+    for(let i = 0; i < n; i++){
+      let x, y;
+      do { x = cx + gauss()*0.085; y = cy + gauss()*0.085; }
+      while(x < 0.04 || x > 0.96 || y < 0.04 || y > 0.96);
+      pts.push({ x, y, c: 0 });
+    }
+  }
+  addCluster(0.32, 0.68, 8);
+  addCluster(0.68, 0.32, 8);
+  // 加两个明显靠近边界的点（会是支持向量）
+  pts.push({ x: 0.50, y: 0.55, c: 0 });
+  pts.push({ x: 0.48, y: 0.42, c: 1 });
+
+  // 简单的线性 SVM：用法向量 (1,-1)/√2 找最大间隔
+  const nx = 1/Math.SQRT2, ny = -1/Math.SQRT2;
+  let maxA = -Infinity, minB = Infinity;
+  for(const p of pts){
+    const s = nx*p.x + ny*p.y;
+    if(p.c === 0) maxA = Math.max(maxA, s);
+    else          minB = Math.min(minB, s);
+  }
+  const mid = (maxA + minB) / 2;
+  const tx = -ny, ty = nx, L = 2.2;
+
+  // 计算每个点的 α 估计值（用于展示）：非支持向量为 0，支持向量>0
+  // 这里用距离边界的接近程度近似
+  pts.forEach((p, i) => {
+    const s = nx*p.x + ny*p.y;
+    const d = Math.min(Math.abs(s - maxA), Math.abs(s - minB));
+    p.alpha = d < 0.012 ? 0.25 + Math.random()*0.2 : 0;
+  });
+
+  function drawLine(c, color, dash, lw){
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(PX(c*nx - tx*L), PY(c*ny - ty*L));
+    ctx.lineTo(PX(c*nx + tx*L), PY(c*ny + ty*L));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.setLineDash(dash);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function render(sel){
+    clearAll(ctx, W, H);
+    // 街道
+    const corners = [
+      [maxA*nx - tx*L, maxA*ny - ty*L],
+      [maxA*nx + tx*L, maxA*ny + ty*L],
+      [minB*nx + tx*L, minB*ny + ty*L],
+      [minB*nx - tx*L, minB*ny - ty*L]
+    ];
+    ctx.beginPath();
+    ctx.moveTo(PX(corners[0][0]), PY(corners[0][1]));
+    for(let i = 1; i < 4; i++) ctx.lineTo(PX(corners[i][0]), PY(corners[i][1]));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(37,99,235,0.08)';
+    ctx.fill();
+
+    drawLine(maxA, 'rgba(13,148,136,0.9)', [8,6], 2.2);
+    drawLine(minB, 'rgba(13,148,136,0.9)', [8,6], 2.2);
+    drawLine(mid,  '#12326b', [], 3);
+
+    // 点
+    pts.forEach((p, i) => {
+      const isSV = p.alpha > 1e-6;
+      const isSel = i === sel;
+      ctx.beginPath();
+      ctx.arc(PX(p.x), PY(p.y), isSel ? 11 : (isSV ? 8.5 : 6.2), 0, Math.PI*2);
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fill();
+      if(isSel){
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 4;
+      } else if(isSV){
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 3;
+      } else {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.8;
+      }
+      ctx.stroke();
+    });
+
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#8496ae';
+    ctx.fillText('深色圆环 = 支持向量（αᵢ > 0）', PAD, 22);
+  }
+
+  // 列表
+  const list = document.getElementById('kktList');
+  const info = document.getElementById('kktInfo');
+  const detail = document.getElementById('kktDetail');
+  let sel = -1;
+
+  function buildList(){
+    list.innerHTML = '';
+    pts.forEach((p, i) => {
+      const s = nx*p.x + ny*p.y;
+      const fval = p.c === 0 ? (s - maxA) : (minB - s);  // 到间隔边界的距离估计
+      const isSV = p.alpha > 1e-6;
+      const row = document.createElement('div');
+      row.className = 'kkt-row' + (i === sel ? ' on' : '');
+      row.innerHTML = `
+        <div class="ln">样本 #${i+1} <span class="badge ${isSV?'sv':'no'}">${isSV?'支持向量':'α=0'}</span></div>
+        <div class="lv">α = ${p.alpha.toFixed(2)}　y = ${p.c===0?'+1':'-1'}　${isSV?'✓ 在边界上':'✓ 在间隔外'}</div>
+      `;
+      row.addEventListener('click', () => { sel = i; buildList(); render(sel); showDetail(i); });
+      list.appendChild(row);
+    });
+  }
+
+  function showDetail(i){
+    const p = pts[i];
+    const s = nx*p.x + ny*p.y;
+    const isSV = p.alpha > 1e-6;
+    const y = p.c === 0 ? 1 : -1;
+    const val = y * (s - mid);  // 近似函数间隔
+    info.textContent = `样本 #${i+1} 详情`;
+    if(isSV){
+      detail.innerHTML = `
+        <p style="margin:.1rem 0;"><strong>样本 #${i+1}</strong>　<span class="badge sv">支持向量</span></p>
+        <div class="kv">
+          <span class="k">坐标</span><span class="v">(${p.x.toFixed(2)}, ${p.y.toFixed(2)})</span>
+          <span class="k">类别</span><span class="v">y = ${y > 0 ? '+1' : '−1'}</span>
+          <span class="k">αᵢ</span><span class="v" style="color:#7c3aed;">${p.alpha.toFixed(3)} > 0</span>
+          <span class="k">约束</span><span class="v" style="color:#0d9488;">yᵢ(wᵀxᵢ+b) = 1（取等号）</span>
+        </div>
+        <p class="muted" style="margin:.4rem 0 0;font-size:.8rem;">✅ 互补松弛性：αᵢ > 0 ⟹ 括号内必须为 0，即样本恰好落在间隔边界上。</p>
+      `;
+    } else {
+      detail.innerHTML = `
+        <p style="margin:.1rem 0;"><strong>样本 #${i+1}</strong>　<span class="badge no">非支持向量</span></p>
+        <div class="kv">
+          <span class="k">坐标</span><span class="v">(${p.x.toFixed(2)}, ${p.y.toFixed(2)})</span>
+          <span class="k">类别</span><span class="v">y = ${y > 0 ? '+1' : '−1'}</span>
+          <span class="k">αᵢ</span><span class="v" style="color:#64748b;">0</span>
+          <span class="k">约束</span><span class="v" style="color:#2563eb;">yᵢ(wᵀxᵢ+b) > 1（严格大于）</span>
+        </div>
+        <p class="muted" style="margin:.4rem 0 0;font-size:.8rem;">✅ 互补松弛性：约束不紧 ⟹ 乘子 αᵢ = 0。这个点对决策边界没有任何影响。</p>
+      `;
+    }
+  }
+
+  document.getElementById('kktPrev').onclick = () => {
+    sel = (sel - 1 + pts.length) % pts.length;
+    buildList(); render(sel); showDetail(sel);
+  };
+  document.getElementById('kktNext').onclick = () => {
+    sel = (sel + 1) % pts.length;
+    buildList(); render(sel); showDetail(sel);
+  };
+
+  buildList();
+  render(-1);
+})();
+
+/* =========================================================
+   交互 3：稀疏性演示
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('cvSparse');
+  if(!cv) return;
+  const W = 520, H = 440;
+  const ctx = mkCanvas(cv, W, H);
+  const PAD = 42, SIZE = Math.min(W, H) - PAD * 2 - 12;
+  const PX = v => PAD + v * SIZE;
+  const PY = v => PAD + (1 - v) * SIZE;
+
+  // 全量数据
+  const allPts = [];
+  function addCluster(cx, cy, n){
+    for(let i = 0; i < n; i++){
+      let x, y;
+      do { x = cx + gauss()*0.10; y = cy + gauss()*0.10; }
+      while(x < 0.04 || x > 0.96 || y < 0.04 || y > 0.96);
+      allPts.push({ x, y, c: 0 });
+    }
+  }
+  addCluster(0.32, 0.68, 9);
+  addCluster(0.68, 0.32, 9);
+
+  // 线性 SVM 边界
+  const nx = 1/Math.SQRT2, ny = -1/Math.SQRT2;
+  const tx = -ny, ty = nx;
+
+  function fit(pts){
+    let maxA = -Infinity, minB = Infinity;
+    for(const p of pts){
+      const s = nx*p.x + ny*p.y;
+      if(p.c === 0) maxA = Math.max(maxA, s);
+      else          minB = Math.min(minB, s);
+    }
+    return { maxA, minB, mid: (maxA+minB)/2 };
+  }
+
+  function drawLine(c, color, dash, lw){
+    const L = 2.2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(PX(c*nx - tx*L), PY(c*ny - ty*L));
+    ctx.lineTo(PX(c*nx + tx*L), PY(c*ny + ty*L));
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.setLineDash(dash);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  let showOnlySV = false;
+  const out = document.getElementById('sparseOut');
+  const msg = document.getElementById('sparseMsg');
+
+  function render(){
+    clearAll(ctx, W, H);
+
+    const fullFit = fit(allPts);
+    const svPts = allPts.filter(p => {
+      const s = nx*p.x + ny*p.y;
+      return Math.abs(s - fullFit.maxA) < 0.012 || Math.abs(s - fullFit.minB) < 0.012;
+    });
+    const ptsToShow = showOnlySV ? svPts : allPts;
+    const fitNow = fit(ptsToShow.length ? ptsToShow : allPts);
+
+    // 街道
+    const L = 2.2;
+    const corners = [
+      [fitNow.maxA*nx - tx*L, fitNow.maxA*ny - ty*L],
+      [fitNow.maxA*nx + tx*L, fitNow.maxA*ny + ty*L],
+      [fitNow.minB*nx + tx*L, fitNow.minB*ny + ty*L],
+      [fitNow.minB*nx - tx*L, fitNow.minB*ny - ty*L]
+    ];
+    ctx.beginPath();
+    ctx.moveTo(PX(corners[0][0]), PY(corners[0][1]));
+    for(let i = 1; i < 4; i++) ctx.lineTo(PX(corners[i][0]), PY(corners[i][1]));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(13,148,136,0.10)';
+    ctx.fill();
+
+    drawLine(fitNow.maxA, 'rgba(13,148,136,0.85)', [7,5], 2);
+    drawLine(fitNow.minB, 'rgba(13,148,136,0.85)', [7,5], 2);
+    drawLine(fitNow.mid,  '#12326b', [], 3);
+
+    // 点
+    for(const p of ptsToShow){
+      const s = nx*p.x + ny*p.y;
+      const isSV = Math.abs(s - fitNow.maxA) < 0.012 || Math.abs(s - fitNow.minB) < 0.012;
+      ctx.beginPath();
+      ctx.arc(PX(p.x), PY(p.y), isSV ? 8 : 6, 0, Math.PI*2);
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fill();
+      ctx.strokeStyle = isSV ? '#0f172a' : '#fff';
+      ctx.lineWidth = isSV ? 3 : 1.7;
+      ctx.stroke();
+    }
+
+    out.textContent = '当前样本数：' + ptsToShow.length + '（原始 ' + allPts.length + ' 个）';
+    if(showOnlySV){
+      msg.innerHTML = '✅ <strong>边界完全没变！</strong>因为所有被删掉的点 αᵢ = 0，它们对决策边界毫无影响。';
+    } else {
+      msg.innerHTML = '💡 点击按钮试试，观察决策边界（深蓝实线）是否发生变化。';
+    }
+
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#8496ae';
+    ctx.fillText('深色圆环 = 支持向量', PAD, 22);
+  }
+
+  document.getElementById('sparseBtn').onclick = () => { showOnlySV = true; render(); };
+  document.getElementById('sparseReset').onclick = () => { showOnlySV = false; render(); };
+  render();
+})();
+
+/* =========================================================
+   交互 4：软间隔 C
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('cvSoft');
+  if(!cv) return;
+  const W = 520, H = 380;
+  const ctx = mkCanvas(cv, W, H);
+  const PAD = 38, SIZE = Math.min(W, H) - PAD * 2 - 22;
+  const PX = v => PAD + v * SIZE;
+  const PY = v => PAD + (1 - v) * SIZE;
+
+  const pts = [];
+  for(let i = 0; i < 10; i++){
+    let x, y;
+    do { x = 0.28 + gauss()*0.09; y = 0.70 + gauss()*0.09; } while(x<0.04||x>0.96||y<0.04||y>0.96);
+    pts.push({x, y, c: 0});
+  }
+  for(let i = 0; i < 10; i++){
+    let x, y;
+    do { x = 0.72 + gauss()*0.09; y = 0.30 + gauss()*0.09; } while(x<0.04||x>0.96||y<0.04||y>0.96);
+    pts.push({x, y, c: 1});
+  }
+  pts.push({x: 0.42, y: 0.62, c: 1, noise: true});
+
+  const nx = 1/Math.SQRT2, ny = -1/Math.SQRT2;
+  const range = document.getElementById('softRange');
+  const valOut = document.getElementById('softVal');
+  const out = document.getElementById('softOut');
+
+  function draw(logC){
+    clearAll(ctx, W, H);
+    const C = Math.pow(10, logC);
+    const t = (logC + 2) / 4.4;
+    const half = 0.115 - 0.078 * t;
+    const center = 0.505 - 0.02 * t;
+
+    const proj = pts.map(p => nx*p.x + ny*p.y);
+    let maxA = -Infinity, minB = Infinity;
+    pts.forEach((p, i) => {
+      if(p.c === 0) maxA = Math.max(maxA, proj[i]);
+      else          minB = Math.min(minB, proj[i]);
+    });
+    const c0 = (maxA + minB)/2 + (center - 0.5) * 0.25;
+    const tx = -ny, ty = nx, L = 2.2;
+
+    const cA = c0 + half, cB = c0 - half;
+    const corners = [
+      [cA*nx - tx*L, cA*ny - ty*L],
+      [cA*nx + tx*L, cA*ny + ty*L],
+      [cB*nx + tx*L, cB*ny + ty*L],
+      [cB*nx - tx*L, cB*ny - ty*L]
+    ];
+    ctx.beginPath();
+    ctx.moveTo(PX(corners[0][0]), PY(corners[0][1]));
+    for(let i = 1; i < 4; i++) ctx.lineTo(PX(corners[i][0]), PY(corners[i][1]));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(217,119,6,0.10)';
+    ctx.fill();
+
+    function line(c, color, dash, lw){
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(PX(c*nx - tx*L), PY(c*ny - ty*L));
+      ctx.lineTo(PX(c*nx + tx*L), PY(c*ny + ty*L));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.setLineDash(dash);
+      ctx.stroke();
+      ctx.restore();
+    }
+    line(cA, 'rgba(217,119,6,0.9)', [8,6], 2);
+    line(cB, 'rgba(217,119,6,0.9)', [8,6], 2);
+    line(c0, '#12326b', [], 3);
+
+    let violations = 0, wrong = 0;
+    pts.forEach((p, i) => {
+      const s = proj[i];
+      const inStreet = Math.abs(s - c0) < half;
+      const pred = s > c0 ? 1 : 0;
+      const isWrong = pred !== p.c;
+      if(inStreet) violations++;
+      if(isWrong) wrong++;
+
+      ctx.beginPath();
+      ctx.arc(PX(p.x), PY(p.y), p.noise ? 8.5 : 6.3, 0, Math.PI*2);
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fill();
+      if(isWrong){ ctx.strokeStyle = '#e11d48'; ctx.lineWidth = 3; }
+      else if(inStreet){ ctx.strokeStyle = '#0f172a'; ctx.lineWidth = 2.8; }
+      else { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8; }
+      ctx.stroke();
+    });
+
+    valOut.textContent = C >= 10 ? C.toFixed(0) : C.toFixed(2);
+    const wDesc = half > 0.095 ? '很宽' : (half > 0.062 ? '适中' : '很窄');
+    out.textContent = '街道：' + wDesc + '　|　落入街道：' + violations + '　|　错分：' + wrong;
+
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#5b6b85';
+    ctx.fillText('红圈 = 错分　黑圈 = 犯规（在间隔内）', PAD, H - 12);
+    if(logC > 1.6){
+      ctx.fillStyle = '#be123c';
+      ctx.font = 'bold 12.5px sans-serif';
+      ctx.fillText('⚠️ C 很大：为了迁就噪声点，街道被压得很窄', PAD, 22);
+    } else if(logC < -0.9){
+      ctx.fillStyle = '#0d9488';
+      ctx.font = 'bold 12.5px sans-serif';
+      ctx.fillText('✅ C 很小：容忍了噪声，街道很宽，泛化更好', PAD, 22);
+    } else {
+      ctx.fillStyle = '#5b6b85';
+      ctx.font = 'bold 12.5px sans-serif';
+      ctx.fillText('⚖️ C 适中：在间隔宽度和错分之间取得平衡', PAD, 22);
+    }
+  }
+
+  range.addEventListener('input', () => draw(+range.value));
+  draw(+range.value);
+})();
+
+/* =========================================================
+   交互 5：核技巧映射
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('cvKernel2');
+  if(!cv) return;
+  const W = 560, H = 400;
+  const ctx = mkCanvas(cv, W, H);
+
+  const pts = [];
+  for(let i = 0; i < 18; i++) pts.push({ x: -1.3 + Math.random() * 2.6, c: 0 });
+  for(let i = 0; i < 9; i++) pts.push({ x: -(3.1 - Math.random() * 1.3), c: 1 });
+  for(let i = 0; i < 9; i++) pts.push({ x:  (1.8 + Math.random() * 1.3), c: 1 });
+
+  const range = document.getElementById('mapRange');
+  const baseY = 344;
+  const SX = x => 280 + x * 68;
+  const SY = v => baseY - v * 26;
+
+  function draw(t){
+    clearAll(ctx, W, H);
+    ctx.strokeStyle = '#dbe4f0';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(18, baseY); ctx.lineTo(W - 18, baseY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(280, 30); ctx.lineTo(280, baseY + 8); ctx.stroke();
+
+    if(t > 0.04){
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(37,99,235,0.16)';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([5, 5]);
+      for(let x = -3.4; x <= 3.4; x += 0.05){
+        const X = SX(x), Y = SY(x * x);
+        if(x === -3.4) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    if(t > 0.72){
+      const alpha = (t - 0.72) / 0.28;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(30, SY(2.9));
+      ctx.lineTo(W - 30, SY(2.9));
+      ctx.strokeStyle = '#e11d48';
+      ctx.lineWidth = 2.8;
+      ctx.setLineDash([9, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#e11d48';
+      ctx.font = 'bold 12.5px sans-serif';
+      ctx.fillText('水平线就能分开 ✨', 40, SY(2.9) - 12);
+      ctx.globalAlpha = 1;
+    }
+
+    for(const p of pts){
+      const X = SX(p.x), Y = SY(t * p.x * p.x);
+      if(t > 0.05){
+        ctx.beginPath();
+        ctx.moveTo(X, baseY);
+        ctx.lineTo(X, Y);
+        ctx.strokeStyle = p.c === 0 ? 'rgba(37,99,235,0.16)' : 'rgba(249,115,22,0.16)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(X, Y, 6.3, 0, Math.PI * 2);
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+
+    ctx.font = '12.5px sans-serif';
+    ctx.fillStyle = '#5b6b85';
+    const label = t < 0.03
+      ? '一维：红点在中间，蓝点在两侧 —— 切不开'
+      : (t > 0.97
+        ? '二维 φ(x)=(x,x²)：红点在下、蓝点在上，可分！'
+        : '正在把数据「抬升」到二维空间…');
+    ctx.fillText(label, 24, 26);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11.5px sans-serif';
+    ctx.fillText('0', 286, baseY + 16);
+  }
+
+  range.addEventListener('input', () => draw(+range.value / 100));
+  draw(0);
+})();
+
+/* =========================================================
+   SVM 核心：SMO 求解器
+   ========================================================= */
+function trainSVM(points, C, gamma, useRBF){
+  const n = points.length;
+  if(n < 2) return null;
+  let hasA = false, hasB = false;
+  for(const p of points){ if(p.c === 0) hasA = true; else hasB = true; }
+  if(!hasA || !hasB) return null;
+
+  const X = points.map(p => [p.x, p.y]);
+  const y = points.map(p => (p.c === 0 ? 1 : -1));
+
+  const K = [];
+  for(let i = 0; i < n; i++){
+    K.push(new Float64Array(n));
+    for(let j = 0; j < n; j++){
+      if(useRBF){
+        const dx = X[i][0] - X[j][0], dy = X[i][1] - X[j][1];
+        K[i][j] = Math.exp(-gamma * (dx*dx + dy*dy));
+      } else {
+        K[i][j] = X[i][0]*X[j][0] + X[i][1]*X[j][1];
+      }
+    }
+  }
+
+  const alpha = new Float64Array(n);
+  let b = 0;
+  const tol = 1e-3;
+  const maxIter = 300;
+
+  const fval = i => {
+    let s = b;
+    for(let j = 0; j < n; j++) s += alpha[j] * y[j] * K[j][i];
+    return s;
+  };
+
+  for(let iter = 0; iter < maxIter; iter++){
+    let changed = 0;
+    for(let i = 0; i < n; i++){
+      const Ei = fval(i) - y[i];
+      if((y[i]*Ei < -tol && alpha[i] < C) || (y[i]*Ei > tol && alpha[i] > 0)){
+        let j = Math.floor(Math.random() * n);
+        if(j === i) j = (i + 1) % n;
+        const Ej = fval(j) - y[j];
+
+        const ai0 = alpha[i], aj0 = alpha[j];
+        let L, Hh;
+        if(y[i] !== y[j]){
+          L  = Math.max(0, aj0 - ai0);
+          Hh = Math.min(C, C + aj0 - ai0);
+        } else {
+          L  = Math.max(0, ai0 + aj0 - C);
+          Hh = Math.min(C, ai0 + aj0);
+        }
+        if(L >= Hh - 1e-12) continue;
+
+        const eta = 2*K[i][j] - K[i][i] - K[j][j];
+        if(eta >= -1e-12) continue;
+
+        let aj = aj0 - y[j]*(Ei - Ej)/eta;
+        aj = Math.min(Hh, Math.max(L, aj));
+        if(Math.abs(aj - aj0) < 1e-7) continue;
+        const ai = ai0 + y[i]*y[j]*(aj0 - aj);
+
+        const b1 = b - Ei - y[i]*(ai - ai0)*K[i][i] - y[j]*(aj - aj0)*K[j][i];
+        const b2 = b - Ej - y[i]*(ai - ai0)*K[i][j] - y[j]*(aj - aj0)*K[j][j];
+
+        alpha[i] = ai; alpha[j] = aj;
+        if(ai > 1e-8 && ai < C - 1e-8) b = b1;
+        else if(aj > 1e-8 && aj < C - 1e-8) b = b2;
+        else b = (b1 + b2) / 2;
+
+        changed++;
+      }
+    }
+    if(changed === 0 && iter > 4) break;
+  }
+
+  return { alpha, b, X, y, n, useRBF, gamma, C };
+}
+
+function makeDecision(model){
+  const { alpha, b, X, y, n, useRBF, gamma } = model;
+  return function(px, py){
+    let s = b;
+    for(let i = 0; i < n; i++){
+      if(alpha[i] < 1e-8) continue;
+      let k;
+      if(useRBF){
+        const dx = px - X[i][0], dy = py - X[i][1];
+        k = Math.exp(-gamma * (dx*dx + dy*dy));
+      } else {
+        k = px * X[i][0] + py * X[i][1];
+      }
+      s += alpha[i] * y[i] * k;
+    }
+    return s;
+  };
+}
+
+/* =========================================================
+   交互 6：SVM 训练场
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('cvLab');
+  if(!cv) return;
+  const W = 480, H = 480;
+  const ctx = mkCanvas(cv, W, H);
+  const PAD = 32, SIZE = W - PAD * 2;
+
+  const PX = v => PAD + v * SIZE;
+  const PY = v => PAD + (1 - v) * SIZE;
+  const dX = px => (px - PAD) / SIZE;
+  const dY = py => 1 - (py - PAD) / SIZE;
+
+  let points = [];
+  let mode = 0;
+  let kernel = 'lin';
+  let model = null;
+
+  const modeBtn = document.getElementById('modeBtn');
+  const kLin = document.getElementById('kLin');
+  const kRbf = document.getElementById('kRbf');
+  const cSlider = document.getElementById('labC');
+  const cOut = document.getElementById('labCv');
+  const gSlider = document.getElementById('labG');
+  const gOut = document.getElementById('labGv');
+  const gammaRow = document.getElementById('gammaRow');
+  const labOut = document.getElementById('labOut');
+
+  function randomPoints(){
+    points = [];
+    const n = 7 + Math.floor(Math.random() * 4);
+    for(let i = 0; i < n; i++){
+      let x, y;
+      do { x = 0.28 + gauss()*0.13; y = 0.70 + gauss()*0.13; } while(x<0.04||x>0.96||y<0.04||y>0.96);
+      points.push({x, y, c: 0});
+    }
+    for(let i = 0; i < n; i++){
+      let x, y;
+      do { x = 0.72 + gauss()*0.13; y = 0.30 + gauss()*0.13; } while(x<0.04||x>0.96||y<0.04||y>0.96);
+      points.push({x, y, c: 1});
+    }
+  }
+
+  function retrain(){
+    const C = Math.pow(10, +cSlider.value);
+    const gamma = Math.pow(10, +gSlider.value);
+    const useRBF = kernel === 'rbf';
+    model = trainSVM(points, C, gamma, useRBF);
+    render();
+  }
+
+  function render(){
+    clearAll(ctx, W, H);
+    ctx.fillStyle = '#fcfdff';
+    ctx.fillRect(PAD, PAD, SIZE, SIZE);
+
+    if(model){
+      const dec = makeDecision(model);
+      const N = 84;
+      const cell = SIZE / N;
+      const F = new Float64Array(N * N);
+      for(let j = 0; j < N; j++){
+        for(let i = 0; i < N; i++){
+          const gx = (i + 0.5) / N;
+          const gy = 1 - (j + 0.5) / N;
+          F[j*N + i] = dec(gx, gy);
+        }
+      }
+      for(let j = 0; j < N; j++){
+        for(let i = 0; i < N; i++){
+          const v = F[j*N + i];
+          ctx.fillStyle = v > 0 ? 'rgba(37,99,235,0.085)' : 'rgba(249,115,22,0.085)';
+          ctx.fillRect(PAD + i*cell, PAD + j*cell, cell + 0.7, cell + 0.7);
+        }
+      }
+      ctx.fillStyle = 'rgba(18,50,107,0.75)';
+      for(let j = 0; j < N; j++){
+        for(let i = 0; i < N; i++){
+          const v = F[j*N + i];
+          let edge = false;
+          if(i + 1 < N && F[j*N + i + 1] * v < 0) edge = true;
+          if(j + 1 < N && F[(j+1)*N + i] * v < 0) edge = true;
+          if(edge) ctx.fillRect(PAD + i*cell, PAD + j*cell, cell + 0.7, cell + 0.7);
+        }
+      }
+
+      let nSV = 0, nWrong = 0;
+      for(let i = 0; i < model.n; i++){
+        if(model.alpha[i] > 1e-4) nSV++;
+        const pred = dec(model.X[i][0], model.X[i][1]) > 0 ? 0 : 1;
+        if(pred !== points[i].c) nWrong++;
+      }
+      labOut.innerHTML = '样本 ' + points.length +
+        '　|　<span style="color:#7c3aed;">支持向量 ' + nSV + '</span>' +
+        '　|　训练错分 ' + nWrong;
+    } else {
+      labOut.textContent = '样本 ' + points.length + '　|　需要同时存在两类样本才能训练';
+    }
+
+    for(let i = 0; i < points.length; i++){
+      const p = points[i];
+      const isSV = model && model.alpha[i] > 1e-4;
+      ctx.beginPath();
+      ctx.arc(PX(p.x), PY(p.y), isSV ? 7.5 : 6, 0, Math.PI * 2);
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fill();
+      ctx.strokeStyle = isSV ? '#0f172a' : '#fff';
+      ctx.lineWidth = isSV ? 3 : 1.7;
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#dbe4f0';
+    ctx.lineWidth = 1.4;
+    ctx.strokeRect(PAD, PAD, SIZE, SIZE);
+
+    ctx.font = '11.5px sans-serif';
+    ctx.fillStyle = '#8496ae';
+    ctx.fillText('点击画布添加样本点', PAD, 18);
+    ctx.fillText('圆环 = 支持向量', W - 118, 18);
+  }
+
+  cv.addEventListener('click', e => {
+    const rect = cv.getBoundingClientRect();
+    const sx = (e.clientX - rect.left) * (W / rect.width);
+    const sy = (e.clientY - rect.top) * (H / rect.height);
+    const x = dX(sx), y = dY(sy);
+    if(x < 0.01 || x > 0.99 || y < 0.01 || y > 0.99) return;
+    points.push({ x, y, c: mode });
+    retrain();
+  });
+
+  modeBtn.addEventListener('click', () => {
+    mode = 1 - mode;
+    modeBtn.innerHTML = mode === 0
+      ? '当前：<span class="pill a" style="margin-left:.25rem;">● 类别 A</span>'
+      : '当前：<span class="pill b" style="margin-left:.25rem;">● 类别 B</span>';
+  });
+
+  function setKernel(k){
+    kernel = k;
+    if(k === 'lin'){
+      kLin.classList.add('btn'); kLin.classList.remove('ghost');
+      kRbf.classList.add('ghost'); kRbf.classList.remove('btn');
+      gammaRow.style.opacity = '.35';
+      gammaRow.style.pointerEvents = 'none';
+    } else {
+      kRbf.classList.add('btn'); kRbf.classList.remove('ghost');
+      kLin.classList.add('ghost'); kLin.classList.remove('btn');
+      gammaRow.style.opacity = '1';
+      gammaRow.style.pointerEvents = 'auto';
+    }
+    retrain();
+  }
+  kLin.addEventListener('click', () => setKernel('lin'));
+  kRbf.addEventListener('click', () => setKernel('rbf'));
+
+  cSlider.addEventListener('input', () => {
+    const C = Math.pow(10, +cSlider.value);
+    cOut.textContent = C >= 10 ? C.toFixed(0) : C.toFixed(2);
+    retrain();
+  });
+  gSlider.addEventListener('input', () => {
+    const g = Math.pow(10, +gSlider.value);
+    gOut.textContent = g >= 100 ? g.toFixed(0) : g.toFixed(1);
+    retrain();
+  });
+
+  document.getElementById('randBtn').addEventListener('click', () => { randomPoints(); retrain(); });
+  document.getElementById('clearBtn').addEventListener('click', () => { points = []; model = null; render(); });
+
+  randomPoints();
+  setKernel('lin');
+})();
+
+/* =========================================================
+   交互 7：手算示例
+   ========================================================= */
+(function(){
+  const cv = document.getElementById('cvExample');
+  if(!cv) return;
+  const W = 470, H = 450;
+  const ctx = mkCanvas(cv, W, H);
+  const PAD = 48, SIZE = Math.min(W, H) - PAD * 2 - 18;
+
+  const SX = v => PAD + (v + 2) / 4 * SIZE;
+  const SY = v => PAD + (2 - v) / 4 * SIZE;
+
+  const steps = Array.from(document.querySelectorAll('#stepBox .step-item'));
+  const stepInfo = document.getElementById('stepInfo');
+  let cur = -1;
+
+  function drawScene(showW, showMargin, showAlpha){
+    clearAll(ctx, W, H);
+    ctx.strokeStyle = '#eef2f8';
+    ctx.lineWidth = 1;
+    for(let v = -2; v <= 2; v++){
+      ctx.beginPath(); ctx.moveTo(SX(v), SY(-2)); ctx.lineTo(SX(v), SY(2)); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(SX(-2), SY(v)); ctx.lineTo(SX(2), SY(v)); ctx.stroke();
+    }
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(SX(-2), SY(0)); ctx.lineTo(SX(2), SY(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(SX(0), SY(-2)); ctx.lineTo(SX(0), SY(2)); ctx.stroke();
+
+    const nx = 1/Math.SQRT2, ny = 1/Math.SQRT2;
+    const tx = 1/Math.SQRT2, ty = -1/Math.SQRT2;
+    function line(c, color, dash, lw, label){
+      const px0 = c * nx, py0 = c * ny;
+      const L = 3.2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(SX(px0 - tx*L), SY(py0 - ty*L));
+      ctx.lineTo(SX(px0 + tx*L), SY(py0 + ty*L));
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.setLineDash(dash);
+      ctx.stroke();
+      ctx.restore();
+      if(label){
+        ctx.fillStyle = color;
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(label, SX(px0 + tx*L) - 90, SY(py0 + ty*L) + 4);
+      }
+    }
+
+    if(showMargin){
+      const cA = 1, cB = -1;
+      const L = 3.2;
+      const corners = [
+        [cA*nx - tx*L, cA*ny - ty*L],
+        [cA*nx + tx*L, cA*ny + ty*L],
+        [cB*nx + tx*L, cB*ny + ty*L],
+        [cB*nx - tx*L, cB*ny - ty*L]
+      ];
+      ctx.beginPath();
+      ctx.moveTo(SX(corners[0][0]), SY(corners[0][1]));
+      for(let i = 1; i < 4; i++) ctx.lineTo(SX(corners[i][0]), SY(corners[i][1]));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(13,148,136,0.10)';
+      ctx.fill();
+      line(1, 'rgba(13,148,136,0.9)', [8,6], 2, 'x+y=1');
+      line(-1, 'rgba(13,148,136,0.9)', [8,6], 2, 'x+y=-1');
+    }
+
+    if(showW) line(0, '#12326b', [], 3, 'x+y=0');
+
+    const P = [
+      { x: 1, y: 1, c: 0, label: 'x₁' },
+      { x: -1, y: -1, c: 1, label: 'x₂' }
+    ];
+    for(const p of P){
+      const isSV = showAlpha;
+      ctx.beginPath();
+      ctx.arc(SX(p.x), SY(p.y), isSV ? 11 : 8, 0, Math.PI * 2);
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fill();
+      ctx.strokeStyle = isSV ? '#0f172a' : '#fff';
+      ctx.lineWidth = isSV ? 3 : 2;
+      ctx.stroke();
+      ctx.fillStyle = '#12326b';
+      ctx.font = 'bold 13.5px sans-serif';
+      ctx.fillText(p.label, SX(p.x) + 15, SY(p.y) - 12);
+      ctx.font = '11.5px sans-serif';
+      ctx.fillStyle = p.c === 0 ? '#2563eb' : '#f97316';
+      ctx.fillText('y = ' + (p.c === 0 ? '+1' : '−1'), SX(p.x) + 15, SY(p.y) + 5);
+    }
+
+    if(showW){
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(SX(-0.6), SY(-0.6));
+      ctx.lineTo(SX(-0.6) + nx * 55, SY(-0.6) - ny * 55);
+      ctx.strokeStyle = '#12326b';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(SX(-0.6) + nx * 55, SY(-0.6) - ny * 55, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#12326b';
+      ctx.fill();
+      ctx.font = 'bold 13.5px serif';
+      ctx.fillText('w', SX(-0.6) + nx * 55 + 7, SY(-0.6) - ny * 55 - 4);
+      ctx.restore();
+    }
+
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#8496ae';
+    if(!showW){
+      ctx.fillText('样本：x₁=(1,1) 正类，x₂=(−1,−1) 负类', PAD, H - 14);
+    } else {
+      ctx.fillText('决策边界 x+y=0，间隔宽度 2√2 ≈ 2.828', PAD, H - 14);
+    }
+  }
+
+  function update(){
+    steps.forEach((s, i) => s.classList.toggle('show', i <= cur));
+    stepInfo.textContent = (cur + 1) + ' / ' + steps.length;
+    drawScene(cur >= 0, cur >= 4, cur >= 3);
+  }
+
+  document.getElementById('stepNext').addEventListener('click', () => {
+    if(cur < steps.length - 1){ cur++; update(); }
+  });
+  document.getElementById('stepReset').addEventListener('click', () => {
+    cur = -1; update();
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>

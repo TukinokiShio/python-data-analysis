@@ -4,6 +4,7 @@
 
 - [第二周作业](第二周作业/)：题目、作答、Carseats 数据、分析脚本及模型结果。
 - [第三四周作业](第三四周作业/)：正则化回归与 SVD 课件，以及本次作业产物。
+- [04 作业](04作业/)：基于 UCI Spambase 数据集的 SVM 垃圾邮件分类。
 
 项目使用 Python 3.12。创建虚拟环境后，在仓库根目录安装共享依赖：
 
@@ -16,6 +17,12 @@ py -3.12 -m venv .venv
 
 ```powershell
 .\.venv\Scripts\python.exe 第二周作业\carseats_analysis.py
+```
+
+运行 04 作业：
+
+```powershell
+.\.venv\Scripts\python.exe 04作业\svm_spambase.py
 ```
 
 
